@@ -1,3 +1,4 @@
+import asyncio
 import os
 import logging
 from bot import main
@@ -13,4 +14,4 @@ for directory in directories:
     logger.info(f"Created directory: {directory}")
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
