@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  vpn-bot:
+    build: .
+    container_name: vpn-bot
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+      - ./logs:/app/logs
+    environment:
+      - TZ=Asia/Tehran
+      - BOT_TOKEN=${BOT_TOKEN}
+      - ADMIN_ID=${ADMIN_ID}
+      - CHANNEL_ID=${CHANNEL_ID}
+      - DATABASE_URL=${DATABASE_URL}
+    networks:
+      - vpn-network
+
+networks:
+  vpn-network:
+    driver: bridge 
