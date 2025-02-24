@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Updater, CommandHandler, CallbackQueryHandler,
-    MessageHandler, Filters, CallbackContext
+    MessageHandler, filters, CallbackContext
 )
 
 from marzpy import Marzban
@@ -60,7 +60,7 @@ class ErrorHandler:
 
 class VPNBot:
     def __init__(self):
-        self.db = Database()
+        self.db = Database(DATABASE_URL)
         self.marzban = Marzban(
             MARZBAN_CONFIG["username"],
             MARZBAN_CONFIG["password"],
@@ -1633,7 +1633,7 @@ def main():
         # Add handlers
         dispatcher.add_handler(CommandHandler("start", vpn_bot.start))
         dispatcher.add_handler(CallbackQueryHandler(vpn_bot.handle_callback))
-        dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, vpn_bot.handle_message))
+        dispatcher.add_handler(MessageHandler(filters.text & ~filters.command, vpn_bot.handle_message))
         
         # Add error handler
         dispatcher.add_error_handler(vpn_bot.error_handler.handle_error)

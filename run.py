@@ -13,4 +13,4 @@ for directory in directories:
     logger.info(f"Created directory: {directory}")
 
 if __name__ == '__main__':
-    main() 
+    main()
