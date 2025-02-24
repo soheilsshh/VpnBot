@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    Updater, CommandHandler, CallbackQueryHandler,
+    Application, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters, CallbackContext
 )
 
@@ -1619,32 +1619,34 @@ class SystemMonitor:
                 {'error': str(e)}
             )
             raise
-
-def main():
+async def main():
     """Start the bot"""
     try:
         # Initialize bot
         vpn_bot = VPNBot()
         
-        # Create updater
-        updater = Updater(BOT_TOKEN)
-        dispatcher = updater.dispatcher
+        # Create application
+        application = Application.builder().token(BOT_TOKEN).build()
         
         # Add handlers
-        dispatcher.add_handler(CommandHandler("start", vpn_bot.start))
-        dispatcher.add_handler(CallbackQueryHandler(vpn_bot.handle_callback))
-        dispatcher.add_handler(MessageHandler(filters.text & ~filters.command, vpn_bot.handle_message))
+        application.add_handler(CommandHandler("start", vpn_bot.start))
+        application.add_handler(CallbackQueryHandler(vpn_bot.handle_callback))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, vpn_bot.handle_message))
         
         # Add error handler
-        dispatcher.add_error_handler(vpn_bot.error_handler.handle_error)
+        application.add_error_handler(vpn_bot.error_handler.handle_error)
         
         # Start polling
         print("Bot started successfully!")
-        updater.start_polling()
-        updater.idle()
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling()
         
+        # Run until interrupted
+        await application.run_until_disconnected()
+
     except Exception as e:
         print(f"Error starting bot: {e}")
 
 if __name__ == '__main__':
-    main() 
+    asyncio.run(main())
