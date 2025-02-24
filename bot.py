@@ -8,7 +8,7 @@ from telegram.ext import (
 )
 
 from marzpy import Marzban
-from database import Database
+from database import *
 from config import *
 import json
 import os
