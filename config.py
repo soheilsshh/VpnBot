@@ -15,7 +15,7 @@ MARZBAN_CONFIG = {
 }
 
 # Database Configuration
-DATABASE_URL = "sqlite:///data/vpn_bot.db"
+DATABASE_URL = "sqlite:///vpn_bot.db"
 
 # Service Templates
 SERVICE_TEMPLATES = {

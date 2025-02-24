@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, Float, String, Boolean, ForeignKey, TIMESTAMP
+from sqlalchemy import Column, Integer, Float, String, Boolean, ForeignKey, TIMESTAMP, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import sessionmaker
+
 from datetime import datetime
+from config import DATABASE_URL
 
 #declear base for using sqlAlchemy
 Base = declarative_base()
@@ -22,9 +25,9 @@ class Service(Base):
     __tablename__ = 'services'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, nullable=False)  # نام سرویس
-    price = Column(Float, nullable=False)   # قیمت سرویس
-    duration = Column(Integer, nullable=False)  # مدت زمان سرویس
+    name = Column(String, nullable=False)  
+    price = Column(Float, nullable=False)   
+    duration = Column(Integer, nullable=False) 
     data_limit = Column(Integer) 
     is_active = Column(Boolean, default=True) 
     inbound_id = Column(Integer)    
@@ -34,76 +37,74 @@ class UserService(Base):
     __tablename__ = 'user_services'
      
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # شناسه کاربر
-    service_id = Column(Integer, ForeignKey('services.id'), nullable=False)  # شناسه سرویس
-    marzban_username = Column(String)  # نام کاربری مرزبان
-    expire_date = Column(TIMESTAMP)  # تاریخ انقضا
-    data_limit = Column(Integer)  # محدودیت داده
-    data_used = Column(Integer, default=0)  # داده‌های استفاده‌شده
-    is_active = Column(Boolean, default=True)  # وضعیت فعال یا غیرفعال بودن
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)  # تاریخ ایجاد
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False) 
+    service_id = Column(Integer, ForeignKey('services.id'), nullable=False) 
+    marzban_username = Column(String) 
+    expire_date = Column(TIMESTAMP)  
+    data_limit = Column(Integer)  
+    data_used = Column(Integer, default=0) 
+    is_active = Column(Boolean, default=True)  
+    created_at = Column(TIMESTAMP, default=datetime.utcnow)  
 
-    user = relationship("User", back_populates="user_services")  # ارتباط با مدل User
-    service = relationship("Service")  # ارتباط با مدل Service
+    user = relationship("User", back_populates="user_services")  
+    service = relationship("Service")  
     
 
 class Transaction(Base):
     __tablename__ = 'transactions'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)  # کلید اصلی
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # شناسه کاربر
-    amount = Column(Float, nullable=False)  # مقدار تراکنش
-    type = Column(String)  # نوع تراکنش
-    status = Column(String)  # وضعیت تراکنش
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)  # تاریخ ایجاد
-
-    # تعریف رابطه با مدل User
+    id = Column(Integer, primary_key=True, autoincrement=True) 
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False) 
+    amount = Column(Float, nullable=False) 
+    type = Column(String)  
+    status = Column(String)  
+    created_at = Column(TIMESTAMP, default=datetime.utcnow)  
     user = relationship("User", back_populates="transactions")
 
 class DiscountCode(Base):
     __tablename__ = 'discount_codes'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)  # کلید اصلی
-    code = Column(String, unique=True, nullable=False)  # کد تخفیف (منحصر به فرد)
-    type = Column(String)  # نوع تخفیف (اختیاری)
-    amount = Column(Float)  # مقدار تخفیف (اختیاری)
-    is_active = Column(Boolean, default=True)  # وضعیت فعال یا غیرفعال بودن
-    used_count = Column(Integer, default=0)  # تعداد استفاده شده
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)  # تاریخ ایجاد
+    id = Column(Integer, primary_key=True, autoincrement=True) 
+    code = Column(String, unique=True, nullable=False)  
+    type = Column(String)  
+    amount = Column(Float)  
+    is_active = Column(Boolean, default=True)  
+    used_count = Column(Integer, default=0)  
+    created_at = Column(TIMESTAMP, default=datetime.utcnow)  
 
 class SystemLog(Base):
     __tablename__ = 'system_logs'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)  # کلید اصلی
-    level = Column(String)  # سطح لاگ (اختیاری)
-    module = Column(String)  # ماژول مرتبط با لاگ (اختیاری)
-    message = Column(String)  # پیام لاگ (اختیاری)
-    details = Column(String)  # جزئیات اضافی (اختیاری)
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)  # تاریخ ایجاد
+    id = Column(Integer, primary_key=True, autoincrement=True)  
+    level = Column(String)  
+    module = Column(String) 
+    message = Column(String) 
+    details = Column(String) 
+    created_at = Column(TIMESTAMP, default=datetime.utcnow) 
 
 class ErrorLog(Base):
     __tablename__ = 'error_logs'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)  # کلید اصلی
-    error_type = Column(String)  # نوع خطا (اختیاری)
-    error_message = Column(String)  # پیام خطا (اختیاری)
-    traceback = Column(String)  # ردیابی خطا (اختیاری)
-    user_id = Column(Integer, ForeignKey('users.id'))  # شناسه کاربر (اختیاری)
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)  # تاریخ ایجاد
+    id = Column(Integer, primary_key=True, autoincrement=True) 
+    error_type = Column(String) 
+    error_message = Column(String) 
+    traceback = Column(String)
+    user_id = Column(Integer, ForeignKey('users.id')) 
+    created_at = Column(TIMESTAMP, default=datetime.utcnow)  
 
 class Report(Base):
     __tablename__ = 'reports'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)  # کلید اصلی
-    type = Column(String)  # نوع گزارش (اختیاری)
-    start_date = Column(TIMESTAMP)  # تاریخ شروع (اختیاری)
-    end_date = Column(TIMESTAMP)  # تاریخ پایان (اختیاری)
-    total_sales = Column(Float)  # مجموع فروش (اختیاری)
-    total_transactions = Column(Integer)  # تعداد تراکنش‌ها (اختیاری)
-    new_users = Column(Integer)  # تعداد کاربران جدید (اختیاری)
-    active_services = Column(Integer)  # تعداد سرویس‌های فعال (اختیاری)
-    data = Column(String)  # داده‌های اضافی (اختیاری)
-    created_at = Column(TIMESTAMP, default=datetime.utcnow)  # تاریخ ایجاد
+    id = Column(Integer, primary_key=True, autoincrement=True) 
+    type = Column(String) 
+    start_date = Column(TIMESTAMP) 
+    end_date = Column(TIMESTAMP)  
+    total_sales = Column(Float)  
+    total_transactions = Column(Integer)  
+    new_users = Column(Integer)  
+    active_services = Column(Integer) 
+    data = Column(String)  
+    created_at = Column(TIMESTAMP, default=datetime.utcnow)  
 
 class Backup(Base):
     __tablename__ = 'backups'
@@ -116,8 +117,40 @@ class Backup(Base):
     note = Column(String)  
     created_at = Column(TIMESTAMP, default=datetime.utcnow)  
 
+   
+class Database:
+    def __init__(self, db_url):
+        self.engine = create_engine(db_url)
+        Base.metadata.create_all(self.engine) 
+        self.Session = sessionmaker(bind=self.engine)
+        
             
-
+    def create_user(self, telegram_id, username=None, is_admin=False):
+        session = self.Session()
+        try:
+            new_user = User(telegram_id=telegram_id, username=username, is_admin=is_admin)
+            session.add(new_user)
+            session.commit()
+            return new_user.id  
+        except Exception as e:
+            session.rollback()  
+            print(f"Error occurred: {e}")
+            return None
+        finally:
+            session.close()
+            
+    
+    def get_user(self, telegram_id):
+        session = self.Session()
+        try:
+            user = session.query(User).filter_by(telegram_id=telegram_id).one()  
+            return user  
+        except FileNotFoundError:
+            print("User not found.")
+            return None
+        finally:
+            session.close() 
+            
 #             conn.commit()
     
 #     # User methods
