@@ -208,7 +208,7 @@ class VPNBot:
             
         except Exception as e:
             logger.error(f"Error in show_services: {e}")
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 "❌ خطا در نمایش سرویس‌ها. لطفاً مجدداً تلاش کنید."
             )
 
@@ -223,7 +223,7 @@ class VPNBot:
         }
         return await self.marzban.create_user(user_data)
 
-    def show_user_account(self, update: Update, context: CallbackContext):
+    async def show_user_account(self, update: Update, context: CallbackContext):
         """Show user account information"""
         try:
             user_id = update.effective_user.id
@@ -254,11 +254,11 @@ class VPNBot:
             ]
             
             reply_markup = InlineKeyboardMarkup(keyboard)
-            update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+            await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
             
         except Exception as e:
             logger.error(f"Error in show_user_account: {e}")
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 "❌ خطا در نمایش اطلاعات حساب. لطفاً مجدداً تلاش کنید."
             )
 
@@ -273,11 +273,11 @@ class VPNBot:
             service = self.db.get_service(service_id)
             
             if not service:
-                query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
+                await query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
                 return
             
             if user[3] < service[2]:  # wallet_balance < price
-                query.edit_message_text(
+                await query.edit_message_text(
                     MESSAGES["insufficient_balance"],
                     reply_markup=InlineKeyboardMarkup([[
                         InlineKeyboardButton("💰 شارژ کیف پول", callback_data='charge_wallet')
@@ -301,18 +301,18 @@ class VPNBot:
 💰 موجودی کیف پول: {user[3]:,} تومان
 """
             
-            query.edit_message_text(
+            await query.edit_message_text(
                 text,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             
         except Exception as e:
             logger.error(f"Error in handle_service_purchase: {e}")
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
             )
 
-    def handle_wallet_charge(self, update: Update, context: CallbackContext):
+    async def handle_wallet_charge(self, update: Update, context: CallbackContext):
         """Handle wallet charge request"""
         try:
             query = update.callback_query
@@ -331,14 +331,14 @@ class VPNBot:
             keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')])
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            query.edit_message_text(
+            await query.edit_message_text(
                 "💳 لطفا مبلغ شارژ کیف پول را انتخاب کنید:",
                 reply_markup=reply_markup
             )
             
         except Exception as e:
             logger.error(f"Error in handle_wallet_charge: {e}")
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
             )
 
@@ -374,7 +374,7 @@ class VPNBot:
                 InlineKeyboardButton("✅ پرداخت انجام شد", callback_data=f'confirm_payment_{transaction_id}_{amount}')
             ]]
             
-            query.edit_message_text(
+            await query.edit_message_text(
                 text,
                 parse_mode='Markdown',
                 reply_markup=InlineKeyboardMarkup(keyboard)
@@ -382,7 +382,7 @@ class VPNBot:
             
         except Exception as e:
             logger.error(f"Error in process_payment: {e}")
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
             )
 
@@ -1420,7 +1420,7 @@ class VPNBot:
                 "❌ خطا در بازگشت به منوی اصلی. لطفاً مجدداً تلاش کنید."
             )
 
-    def show_service_info(self, update: Update, context: CallbackContext):
+    async def show_service_info(self, update: Update, context: CallbackContext):
         """Show user's active services information"""
         try:
             user_id = update.effective_user.id
@@ -1429,7 +1429,7 @@ class VPNBot:
             user = self.db.get_user(user_id)
             if not user:
                 logger.error(f"User {user_id} not found")
-                update.callback_query.edit_message_text(
+                await update.callback_query.edit_message_text(
                     "❌ اطلاعات کاربری شما یافت نشد."
                 )
                 return
@@ -1462,7 +1462,7 @@ class VPNBot:
             keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 text,
                 reply_markup=reply_markup
             )
@@ -1470,7 +1470,7 @@ class VPNBot:
         except Exception as e:
             logger.error(f"Error in show_service_info: {str(e)}")
             logger.exception(e)  # This will log the full traceback
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 "❌ خطا در نمایش اطلاعات سرویس. لطفاً مجدداً تلاش کنید."
             )
 
