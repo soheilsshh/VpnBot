@@ -228,7 +228,7 @@ class VPNBot:
         try:
             user_id = update.effective_user.id
             user = self.db.get_user(user_id)
-            active_services = self.db.get_user_active_services(user[0])  # user[0] is ID
+            active_services = self.db.get_user_active_services(user.id)  # user[0] is ID
             
             text = f"""
 👤 اطلاعات حساب کاربری:
@@ -1435,7 +1435,7 @@ class VPNBot:
                 return
             
             logger.info(f"Found user: {user}")
-            active_services = self.db.get_user_active_services(user[0])  # user[0] is the ID
+            active_services = self.db.get_user_active_services(user.id)  # user[0] is the ID
             logger.info(f"Active services: {active_services}")
             
             if not active_services:
