@@ -142,7 +142,7 @@ class VPNBot:
         """Handle callback queries"""
         try:
             query = update.callback_query
-            query.answer()
+            await query.answer()
 
             # Default handlers first
             handlers = {
@@ -201,7 +201,7 @@ class VPNBot:
             keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')])
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 "📦 لطفاً سرویس مورد نظر خود را انتخاب کنید:",
                 reply_markup=reply_markup
             )
