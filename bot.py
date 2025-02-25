@@ -165,7 +165,7 @@ class VPNBot:
                 return
 
             if query.data.startswith('confirm_purchase_'):
-                await self.handle_purchase_confirmation(update, context)
+                await self.handle_purchase_confirmation(update, context) #TODO: write this function
                 return
 
             if query.data.startswith('charge_') and query.data != 'charge_wallet':####
@@ -228,7 +228,7 @@ class VPNBot:
         try:
             user_id = update.effective_user.id
             user = self.db.get_user(user_id)
-            active_services = self.db.get_user_active_services(user.id)  # user[0] is ID
+            active_services = self.db.get_user_active_services(user.id)
             
             text = f"""
 👤 اطلاعات حساب کاربری:
@@ -355,7 +355,7 @@ class VPNBot:
             # Create pending transaction
             user = self.db.get_user(update.effective_user.id)
             transaction_id = self.db.create_transaction(
-                user_id=user[0],  # user[0] is ID
+                user_id=user.id,
                 amount=amount,
                 type_='deposit',
                 status='pending'
@@ -397,7 +397,7 @@ class VPNBot:
             
             # Get user and update balance
             user = self.db.get_user(update.effective_user.id)
-            self.db.update_user_balance(user[1], amount)  # user[1] is telegram_id
+            self.db.update_user_balance(user.id, amount)
             
             await query.edit_message_text(
                 "✅ پرداخت شما با موفقیت انجام شد و کیف پول شما شارژ شد.",
@@ -1435,7 +1435,7 @@ class VPNBot:
                 return
             
             logger.info(f"Found user: {user}")
-            active_services = self.db.get_user_active_services(user.id)  # user[0] is the ID
+            active_services = self.db.get_user_active_services(user.id)
             logger.info(f"Active services: {active_services}")
             
             if not active_services:
