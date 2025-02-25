@@ -1394,7 +1394,7 @@ class VPNBot:
             ])
         )
 
-    def back_to_main(self, update: Update, context: CallbackContext):
+    async def back_to_main(self, update: Update, context: CallbackContext):
         """Return to main menu"""
         try:
             user_id = update.effective_user.id
@@ -1409,14 +1409,14 @@ class VPNBot:
                 keyboard.append([InlineKeyboardButton("⚙️ پنل مدیریت", callback_data='admin_panel')])
             
             reply_markup = InlineKeyboardMarkup(keyboard)
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 MESSAGES["welcome"],
                 reply_markup=reply_markup
             )
             
         except Exception as e:
             logger.error(f"Error in back_to_main: {e}")
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 "❌ خطا در بازگشت به منوی اصلی. لطفاً مجدداً تلاش کنید."
             )
 
