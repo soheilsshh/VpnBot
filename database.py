@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, Boolean, ForeignKey, TIMESTAMP, create_engine, func
+from sqlalchemy import Column, Integer, Float, String, Boolean, ForeignKey, TIMESTAMP, Text, create_engine, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime
@@ -102,6 +102,17 @@ class ErrorLog(Base):
     traceback = Column(String)
     user_id = Column(Integer, ForeignKey('users.id'))
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
+
+class Backup(Base):
+    __tablename__ = 'backups'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    filename = Column(String, nullable=False)
+    size = Column(Integer, nullable=False)
+    type = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    note = Column(Text)
+    created_at = Column(TIMESTAMP, server_default=func.now())
 
 
 class Database:
