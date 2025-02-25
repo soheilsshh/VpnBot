@@ -41,17 +41,17 @@ class ErrorHandler:
     def __init__(self, bot):
         self.bot = bot
 
-    def handle_error(self, update: Update, context: CallbackContext):
+    async def handle_error(self, update: Update, context: CallbackContext):
         try:
             if update and update.effective_user:
                 user_id = update.effective_user.id
                 if user_id == ADMIN_ID:
-                    context.bot.send_message(
+                    await context.bot.send_message(
                         ADMIN_ID,
                         f"❌ خطای سیستم:\n{str(context.error)}"
                     )
                 else:
-                    context.bot.send_message(
+                    await context.bot.send_message(
                         user_id,
                         "❌ متأسفانه خطایی رخ داده است. لطفاً مجدداً تلاش کنید."
                     )
@@ -102,7 +102,7 @@ class VPNBot:
                 inbound_id=template["inbound_id"]
             )
 
-    def start(self, update: Update, context: CallbackContext):
+    async def start(self, update: Update, context: CallbackContext):
         """Start command handler"""
         try:
             user_id = update.effective_user.id
@@ -129,14 +129,14 @@ class VPNBot:
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             # Send welcome message
-            update.message.reply_text(
+            await update.message.reply_text(
                 text=MESSAGES["welcome"],
                 reply_markup=reply_markup
             )
             
         except Exception as e:
             logger.error(f"Error in start command: {e}")
-            update.message.reply_text("❌ خطایی رخ داده است. لطفاً مجدداً تلاش کنید.")
+            await update.message.reply_text("❌ خطایی رخ داده است. لطفاً مجدداً تلاش کنید.")
 
     def handle_callback(self, update: Update, context: CallbackContext):
         """Handle callback queries"""
