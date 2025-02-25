@@ -1642,9 +1642,7 @@ async def main():
         await application.initialize()
         await application.start()
         await application.updater.start_polling()
-        
-        # Keep the bot running until manually stopped
-        await application.idle()
+
 
     except Exception as e:
         print(f"Error starting bot: {e}")
