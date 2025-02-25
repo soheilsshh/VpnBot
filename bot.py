@@ -1623,29 +1623,23 @@ class SystemMonitor:
 async def main():
     """Start the bot"""
     try:
-        # Initialize bot
         vpn_bot = VPNBot()
         
-        # Create application
         application = Application.builder().token(BOT_TOKEN).build()
         
-        # Add handlers
         application.add_handler(CommandHandler("start", vpn_bot.start))
         application.add_handler(CallbackQueryHandler(vpn_bot.handle_callback))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, vpn_bot.handle_message))
         
-        # Add error handler
         application.add_error_handler(vpn_bot.error_handler.handle_error)
-        
-        # Start polling
-        print("Bot started successfully!")
-        await application.initialize()
-        await application.start()
-        await application.updater.start_polling()
 
+        print("Bot started successfully!")
+
+        # Use run_polling() which handles the event loop properly
+        application.run_polling()
 
     except Exception as e:
         print(f"Error starting bot: {e}")
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(main())  # This is fine now since run_polling() manages the loop
