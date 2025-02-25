@@ -103,8 +103,11 @@ class VPNBot:
             )
 
     async def start(self, update: Update, context: CallbackContext):
+        """Start command handler"""
         try:
             user_id = update.effective_user.id
+
+            # Create or get user
             user = self.db.get_user(user_id)
             if not user:
                 self.db.create_user(
@@ -112,36 +115,74 @@ class VPNBot:
                     username=update.effective_user.username,
                     is_admin=(user_id == ADMIN_ID)
                 )
-            keyboard = [[InlineKeyboardButton("🛒 Buy Service", callback_data='buy_service')],
-                        [InlineKeyboardButton("👤 Account", callback_data='user_account')],
-                        [InlineKeyboardButton("📊 Service Info", callback_data='service_info')]]
+
+            # Create keyboard
+            keyboard = [
+                [InlineKeyboardButton("🛒 خرید سرویس", callback_data='buy_service')],
+                [InlineKeyboardButton("👤 حساب کاربری", callback_data='user_account')],
+                [InlineKeyboardButton("📊 اطلاعات سرویس", callback_data='service_info')]
+            ]
+
             if user_id == ADMIN_ID:
-                keyboard.append([InlineKeyboardButton("⚙️ Admin Panel", callback_data='admin_panel')])
+                keyboard.append([InlineKeyboardButton("⚙️ پنل مدیریت", callback_data='admin_panel')])
+
             reply_markup = InlineKeyboardMarkup(keyboard)
-            await update.message.reply_text(text="Welcome! Please choose an option:", reply_markup=reply_markup)
+
+            # Send welcome message
+            await update.message.reply_text(
+                text=MESSAGES["welcome"],
+                reply_markup=reply_markup
+            )
+
         except Exception as e:
             logger.error(f"Error in start command: {e}")
-            await update.message.reply_text("❌ An error occurred. Please try again.")
+            await update.message.reply_text("❌ خطایی رخ داده است. لطفاً مجدداً تلاش کنید.")
 
     async def handle_callback(self, update: Update, context: CallbackContext):
+        """Handle callback queries"""
         try:
             query = update.callback_query
-            await query.answer()
+            query.answer()
+
+            # Default handlers first
             handlers = {
                 'buy_service': self.show_services,
                 'user_account': self.show_user_account,
                 'admin_panel': self.show_admin_panel,
                 'back_to_main': self.back_to_main,
+                'charge_wallet': self.handle_wallet_charge,
                 'service_info': self.show_service_info
             }
+
             handler = handlers.get(query.data)
             if handler:
-                await handler(update, context)
+                handler(update, context)
                 return
+
+            # Then handle pattern-based callbacks
+            if query.data.startswith('service_'):
+                await self.handle_service_purchase(update, context)
+                return
+
+            if query.data.startswith('confirm_purchase_'):
+                await self.handle_purchase_confirmation(update, context)
+                return
+
+            if query.data.startswith('charge_') and query.data != 'charge_wallet':####
+                await self.process_payment(update, context)
+                return
+
+            if query.data.startswith('confirm_payment_'):
+                await self.handle_payment_confirmation(update, context)
+                return
+
             logger.warning(f"Unknown callback data: {query.data}")
+
         except Exception as e:
             logger.error(f"Error in handle_callback: {e}")
-            await query.edit_message_text("❌ An error occurred. Please try again.")
+            await query.edit_message_text(
+                "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
+            )
 
     def show_services(self, update: Update, context: CallbackContext):
         """Show available services"""
@@ -1580,16 +1621,27 @@ class SystemMonitor:
             raise
 
 def main():
+    """Start the bot"""
     logging.basicConfig(level=logging.INFO)
+
     try:
         vpn_bot = VPNBot()
+
         application = Application.builder().token(BOT_TOKEN).build()
+
         application.add_handler(CommandHandler("start", vpn_bot.start))
         application.add_handler(CallbackQueryHandler(vpn_bot.handle_callback))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, vpn_bot.handle_message))
+
+        application.add_error_handler(vpn_bot.error_handler.handle_error)
+
         print("Bot started successfully!")
+
+        # Run the bot using built-in event loop handling
         application.run_polling()
+
     except Exception as e:
         logging.error(f"Error starting bot: {e}")
 
 if __name__ == '__main__':
-    main()
+    main()  # No asyncio.run() needed!
