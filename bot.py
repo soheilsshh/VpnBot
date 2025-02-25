@@ -138,7 +138,7 @@ class VPNBot:
             logger.error(f"Error in start command: {e}")
             await update.message.reply_text("❌ خطایی رخ داده است. لطفاً مجدداً تلاش کنید.")
 
-    def handle_callback(self, update: Update, context: CallbackContext):
+    async def handle_callback(self, update: Update, context: CallbackContext):
         """Handle callback queries"""
         try:
             query = update.callback_query
@@ -161,26 +161,26 @@ class VPNBot:
             
             # Then handle pattern-based callbacks
             if query.data.startswith('service_'):
-                self.handle_service_purchase(update, context)
+                await self.handle_service_purchase(update, context)
                 return
             
             if query.data.startswith('confirm_purchase_'):
-                self.handle_purchase_confirmation(update, context)
+                await self.handle_purchase_confirmation(update, context)
                 return
             
             if query.data.startswith('charge_') and query.data != 'charge_wallet':####
-                self.process_payment(update, context)
+                await self.process_payment(update, context)
                 return
             
             if query.data.startswith('confirm_payment_'):
-                self.handle_payment_confirmation(update, context)
+                await self.handle_payment_confirmation(update, context)
                 return
             
             logger.warning(f"Unknown callback data: {query.data}")
             
         except Exception as e:
             logger.error(f"Error in handle_callback: {e}")
-            query.edit_message_text(
+            await query.edit_message_text(
                 "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
             )
 
@@ -262,7 +262,7 @@ class VPNBot:
                 "❌ خطا در نمایش اطلاعات حساب. لطفاً مجدداً تلاش کنید."
             )
 
-    def handle_service_purchase(self, update: Update, context: CallbackContext):
+    async def handle_service_purchase(self, update: Update, context: CallbackContext):
         """Handle service purchase"""
         try:
             query = update.callback_query
@@ -342,7 +342,7 @@ class VPNBot:
                 "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
             )
 
-    def process_payment(self, update: Update, context: CallbackContext):
+    async def process_payment(self, update: Update, context: CallbackContext):
         """Process payment for wallet charge"""
         try:
             query = update.callback_query
@@ -386,7 +386,7 @@ class VPNBot:
                 "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
             )
 
-    def handle_payment_confirmation(self, update: Update, context: CallbackContext):
+    async def handle_payment_confirmation(self, update: Update, context: CallbackContext):
         """Handle payment confirmation"""
         try:
             query = update.callback_query
