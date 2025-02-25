@@ -237,7 +237,7 @@ class VPNBot:
 🌟 سرویس‌های فعال:
 """
             for service in active_services:
-                expire_date = datetime.strptime(service[4], '%Y-%m-%d %H:%M:%S')
+                expire_date = service[4]
                 remaining_days = (expire_date - datetime.utcnow()).days
                 remaining_gb = (service[5] - service[6]) / 1024  # Convert to GB
                 
@@ -1444,7 +1444,7 @@ class VPNBot:
                 text = "📊 اطلاعات سرویس‌های فعال:\n\n"
                 for service in active_services:
                     try:
-                        expire_date = datetime.strptime(service[4], '%Y-%m-%d %H:%M:%S')
+                        expire_date = service[4]
                         remaining_days = (expire_date - datetime.utcnow()).days
                         remaining_gb = (service[5] - (service[6] or 0)) / 1024  # Convert to GB, handle None
                         
