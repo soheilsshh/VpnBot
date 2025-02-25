@@ -249,7 +249,7 @@ class VPNBot:
 
             keyboard = [
                 [InlineKeyboardButton("💰 شارژ کیف پول", callback_data='charge_wallet')],
-                [InlineKeyboardButton("🔄 تمدید سرویس", callback_data='extend_service')],
+                [InlineKeyboardButton("🔄 تمدید سرویس", callback_data='extend_service')], #TODO write this function
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')]
             ]
             
@@ -396,6 +396,7 @@ class VPNBot:
             self.db.update_transaction_status(transaction_id, 'completed')
             
             # Get user and update balance
+            #TODO: handle charge balance user
             user = self.db.get_user(update.effective_user.id)
             self.db.update_user_balance(user.id, amount)
             
@@ -413,6 +414,7 @@ class VPNBot:
             )
 
     async def show_admin_panel(self, update: Update, context: CallbackContext):
+        #TODO : handle each callback on admin panel class (all of buttons)
         """Show admin panel"""
         try:
             if update.effective_user.id != ADMIN_ID:
