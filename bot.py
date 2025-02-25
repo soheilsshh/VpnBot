@@ -1620,8 +1620,10 @@ class SystemMonitor:
             )
             raise
 
-async def main():
+def main():
     """Start the bot"""
+    logging.basicConfig(level=logging.INFO)
+
     try:
         vpn_bot = VPNBot()
         
@@ -1635,11 +1637,11 @@ async def main():
 
         print("Bot started successfully!")
 
-        # Use run_polling() which handles the event loop properly
+        # Run the bot using built-in event loop handling
         application.run_polling()
 
     except Exception as e:
-        print(f"Error starting bot: {e}")
+        logging.error(f"Error starting bot: {e}")
 
 if __name__ == '__main__':
-    asyncio.run(main())  # This is fine now since run_polling() manages the loop
+    main()  # No asyncio.run() needed!
