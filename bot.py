@@ -223,7 +223,7 @@ class VPNBot:
         }
         return await self.marzban.create_user(user_data)
 
-   async def show_user_account(self, update: Update, context: CallbackContext):
+    def show_user_account(self, update: Update, context: CallbackContext):
         """Show user account information"""
         try:
             user_id = update.effective_user.id
@@ -254,11 +254,11 @@ class VPNBot:
             ]
             
             reply_markup = InlineKeyboardMarkup(keyboard)
-            await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+            update.callback_query.edit_message_text(text, reply_markup=reply_markup)
             
         except Exception as e:
             logger.error(f"Error in show_user_account: {e}")
-            await update.callback_query.edit_message_text(
+            update.callback_query.edit_message_text(
                 "❌ خطا در نمایش اطلاعات حساب. لطفاً مجدداً تلاش کنید."
             )
 
