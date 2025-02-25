@@ -184,7 +184,7 @@ class VPNBot:
                 "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
             )
 
-    def show_services(self, update: Update, context: CallbackContext):
+    async def show_services(self, update: Update, context: CallbackContext):
         """Show available services"""
         try:
             services = self.db.get_active_services()
