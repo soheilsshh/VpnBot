@@ -276,7 +276,7 @@ class VPNBot:
                 await query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
                 return
             
-            if user[3] < service[2]:  # wallet_balance < price
+            if user.wallet_balance < service.price:  # wallet_balance < price
                 await query.edit_message_text(
                     MESSAGES["insufficient_balance"],
                     reply_markup=InlineKeyboardMarkup([[
@@ -293,12 +293,12 @@ class VPNBot:
             
             text = f"""
 🛍 خرید سرویس:
-نام: {service[1]}
-قیمت: {service[2]:,} تومان
-مدت: {service[3]} روز
-حجم: {service[4]} GB
+نام: {service.name}
+قیمت: {service.price:,} تومان
+مدت: {service.duration} روز
+حجم: {service.data_limit} GB
 
-💰 موجودی کیف پول: {user[3]:,} تومان
+💰 موجودی کیف پول: {user.wallet_balance:,} تومان
 """
             
             await query.edit_message_text(
