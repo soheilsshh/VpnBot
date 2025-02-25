@@ -1619,6 +1619,7 @@ class SystemMonitor:
                 {'error': str(e)}
             )
             raise
+
 async def main():
     """Start the bot"""
     try:
@@ -1642,8 +1643,8 @@ async def main():
         await application.start()
         await application.updater.start_polling()
         
-        # Run until interrupted
-        await application.run_until_disconnected()
+        # Keep the bot running until manually stopped
+        await application.idle()
 
     except Exception as e:
         print(f"Error starting bot: {e}")
