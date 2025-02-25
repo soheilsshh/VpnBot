@@ -193,8 +193,8 @@ class VPNBot:
             for service in services:
                 keyboard.append([
                     InlineKeyboardButton(
-                        f"{service[1]} - {service[2]:,} تومان",  # name - price
-                        callback_data=f"service_{service[0]}"     # service id
+                        f"{service.name} - {service.price,} تومان",  # name - price
+                        callback_data=f"service_{service.id}"     # service id
                     )
                 ])
             
