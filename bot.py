@@ -156,7 +156,7 @@ class VPNBot:
 
             handler = handlers.get(query.data)
             if handler:
-                handler(update, context)
+                await handler(update, context)
                 return
 
             # Then handle pattern-based callbacks
@@ -399,7 +399,7 @@ class VPNBot:
             user = self.db.get_user(update.effective_user.id)
             self.db.update_user_balance(user[1], amount)  # user[1] is telegram_id
             
-            query.edit_message_text(
+            await query.edit_message_text(
                 "✅ پرداخت شما با موفقیت انجام شد و کیف پول شما شارژ شد.",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("🔙 بازگشت به منو", callback_data='back_to_main')]
@@ -408,11 +408,11 @@ class VPNBot:
             
         except Exception as e:
             logger.error(f"Error in handle_payment_confirmation: {e}")
-            query.edit_message_text(
+            await query.edit_message_text(
                 "❌ خطا در تایید پرداخت. لطفاً با پشتیبانی تماس بگیرید."
             )
 
-    def show_admin_panel(self, update: Update, context: CallbackContext):
+    async def show_admin_panel(self, update: Update, context: CallbackContext):
         """Show admin panel"""
         try:
             if update.effective_user.id != ADMIN_ID:
@@ -428,14 +428,14 @@ class VPNBot:
             ]
             
             reply_markup = InlineKeyboardMarkup(keyboard)
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 "⚙️ پنل مدیریت\nلطفا یک گزینه را انتخاب کنید:",
                 reply_markup=reply_markup
             )
             
         except Exception as e:
             logger.error(f"Error in show_admin_panel: {e}")
-            update.callback_query.edit_message_text(
+            await update.callback_query.edit_message_text(
                 "❌ خطا در نمایش پنل مدیریت. لطفاً مجدداً تلاش کنید."
             )
 
