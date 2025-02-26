@@ -175,7 +175,6 @@ class VPNBot:
                 'add_service' : self.add_service,
                 'edit_services' : self.edit_services,
                 'inbound_settings' : self.manage_inbounds,
-                'renewal_settings' : self.renewal_settings
             }
 
             handler = handlers.get(query.data)
