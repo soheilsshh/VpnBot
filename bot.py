@@ -275,7 +275,7 @@ class VPNBot:
 📅 {remaining_days} روز مانده
 📊 {remaining_gb:.1f} GB حجم باقیمانده
 """
-
+            print(service)
             keyboard = [
                 [InlineKeyboardButton("💰 شارژ کیف پول", callback_data='charge_wallet')],
                 [InlineKeyboardButton("🔄 تمدید سرویس", callback_data='extend_service')], 
@@ -345,8 +345,6 @@ class VPNBot:
         """Handle purchase confirmation"""
         try:
             query = update.callback_query
-            print(query.data.split('_'))
-            print(query.data.split('_')[2])
             service_id = int(query.data.split('_')[2])
 
             user = self.db.get_user(update.effective_user.id)
