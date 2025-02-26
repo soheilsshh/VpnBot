@@ -916,48 +916,57 @@ class VPNBot:
             return
 
         query = update.callback_query
-
         try:
             service_id = int(query.data.split('_')[-1])
         except (IndexError, ValueError):
-            await query.edit_message_text("❌ خطا در دریافت اطلاعات سرویس.")
+            await query.answer("❌ خطا در دریافت اطلاعات سرویس.", show_alert=True)
             return
 
-        context.user_data['edit_service_id'] = service_id  # Store service_id for later use
+        context.user_data['edit_service_id'] = service_id  # Store service_id for further use
 
         with Session(self.db.engine) as session:
             service = session.query(Service).filter_by(id=service_id).first()
             if not service:
-                await query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
+                await query.answer("❌ سرویس یافت نشد.", show_alert=True)
                 return
 
             status = "فعال ✅" if service.is_active else "غیرفعال ❌"
             text = f"""
-    🔧 ویرایش سرویس:
-    نام: {service.name}
-    قیمت: {service.price:,} تومان
-    مدت: {service.duration} روز
-    حجم: {service.data_limit} GB
-    وضعیت: {status}
+    🔧 **ویرایش سرویس**
+    📌 نام: {service.name}
+    💰 قیمت: {service.price:,} تومان
+    ⏳ مدت: {service.duration} روز
+    📊 حجم: {service.data_limit} GB
+    ⚡ وضعیت: {status}
     """
             keyboard = [
-                [InlineKeyboardButton("📝 ویرایش نام", callback_data=f'edit_service_name_{service.id}')],
+                [InlineKeyboardButton("📝 ویرایش نام", callback_data='edit_service_name')],
                 [InlineKeyboardButton("💰 ویرایش قیمت", callback_data='edit_service_price')],
-                [InlineKeyboardButton("⏱ ویرایش مدت", callback_data='edit_service_duration')],
+                [InlineKeyboardButton("⏳ ویرایش مدت", callback_data='edit_service_duration')],
                 [InlineKeyboardButton("📊 ویرایش حجم", callback_data='edit_service_data_limit')],
-                [InlineKeyboardButton("🔄 تغییر وضعیت", callback_data=f'toggle_service_{service_id}')],
-                [InlineKeyboardButton("❌ حذف سرویس", callback_data=f'delete_service_{service_id}')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='edit_services')]
             ]
-
             reply_markup = InlineKeyboardMarkup(keyboard)
+
             await query.edit_message_text(text, reply_markup=reply_markup)
 
+
     async def edit_service_field(self, update: Update, context: CallbackContext):
-        """Handle selection of which field to edit"""
+        """Prompt the admin to enter a new value for the selected field"""
         query = update.callback_query
-        context.user_data['edit_field'] = query.data.replace('edit_service_', '')
-        await query.edit_message_text("لطفا مقدار جدید را وارد کنید:")
+        field = query.data.replace('edit_service_', '')  # Extract the field name
+        context.user_data['edit_field'] = field
+
+        field_names = {
+            "name": "نام جدید",
+            "price": "قیمت جدید (تومان)",
+            "duration": "مدت جدید (روز)",
+            "data_limit": "حجم جدید (GB)"
+        }
+
+        prompt_text = f"لطفا {field_names.get(field, 'مقدار جدید')} را وارد کنید:"
+        await query.edit_message_text(prompt_text)
+
 
     async def handle_edit_service_input(self, update: Update, context: CallbackContext):
         """Handle user input for editing service attributes"""
@@ -975,7 +984,7 @@ class VPNBot:
         with Session(self.db.engine) as session:
             service = session.query(Service).filter_by(id=service_id).first()
             if not service:
-                await update.message.reply_text("❌ سرویس مورد نظر یافت نشد.")
+                await update.message.reply_text("❌ سرویس یافت نشد.")
                 return
 
             try:
