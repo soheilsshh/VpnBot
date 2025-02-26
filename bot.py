@@ -156,6 +156,7 @@ class VPNBot:
                 'extend_service' : self.handle_extend_service,
                 'admin_sales_report': self.show_sales_report,
                 'admin_users': self.manage_users,
+                'list_discounts': self.handle_list_discounts,
                 'admin_discount_codes': self.manage_discount_codes,
                 'admin_broadcast': self.broadcast_message,
                 'admin_services': self.manage_services,
@@ -681,6 +682,30 @@ class VPNBot:
 
             keyboard = [
                 [InlineKeyboardButton("🔙 بازگشت به مدیریت کاربران", callback_data='admin_users')]
+             ]
+
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.callback_query.edit_message_text(text)
+
+    async def handle_list_discounts(self, update: Update, context: CallbackContext):
+        "show list discounts"
+        with Session(self.db.engine) as session:
+
+            discounts = session.query(DiscountCode).join(DiscountCode).filter(
+                DiscountCode.is_active == True
+            ).distinct().all()
+
+            if not discounts:
+                await update.callback_query.edit_message_text("❌ هیچ کد تخفیف فعالی یافت نشد.")
+                return
+
+            text = "📋 کد تخفیف های فعال:\n"
+            for discount in discounts:
+                text += f"👤 {discount.code} - ID: {discount.amount}\n"
+
+            keyboard = [
+                [InlineKeyboardButton("🔙 بازگشت به منو مدیریت", callback_data='admin_users')]
              ]
 
             reply_markup = InlineKeyboardMarkup(keyboard)
