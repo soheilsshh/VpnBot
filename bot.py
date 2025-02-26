@@ -955,7 +955,7 @@ class VPNBot:
 
         keyboard = [
             [InlineKeyboardButton("➕ کد تخفیف جدید", callback_data='add_discount')],
-            [InlineKeyboardButton("📋 لیست کدهای تخفیف", callback_data='list_discounts')], #TODO: create this call_back
+            [InlineKeyboardButton("📋 لیست کدهای تخفیف", callback_data='list_discount_codes')], #TODO: create this call_back
             [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
         ]
 
