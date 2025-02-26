@@ -164,7 +164,6 @@ class VPNBot:
                 'report_weekly': self.show_report,
                 'report_monthly': self.show_report,
                 'report_custom': self.show_report,
-                'search_user': self.search_user, 
                 'active_users': self.show_active_users,
                 'add_discount': self.add_discount_code,
                 'list_discount_codes': self.list_discount_codes,
@@ -659,20 +658,12 @@ class VPNBot:
 """
             
             keyboard = [
-                [InlineKeyboardButton("🔍 جستجوی کاربر", callback_data='search_user')],
                 [InlineKeyboardButton("📊 کاربران فعال", callback_data='active_users')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
             ]
             
             reply_markup = InlineKeyboardMarkup(keyboard)
             await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
-            
-    async def search_user(self, update: Update, context: CallbackContext):
-        """Search for a user by username or telegram ID"""
-        await update.callback_query.edit_message_text(
-            "لطفاً نام کاربری یا شناسه تلگرام کاربر را وارد کنید:"
-        )
-        context.user_data['admin_state'] = 'waiting_for_user_search'
     
     async def show_active_users(self, update: Update, context: CallbackContext):
         """Show active users"""
