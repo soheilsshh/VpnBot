@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class LogManager:
     def __init__(self, db):
         self.db = db
-
+        
     async def log(self, level: str, module: str, message: str, details: dict = None):
         try:
             self.db.log_system(level, module, message, details)
@@ -70,12 +70,12 @@ class VPNBot:
         self.error_handler = ErrorHandler(self)
         self.system_monitor = SystemMonitor(self)
         self.cleanup_manager = CleanupManager(self)
-
+        
     async def initialize(self):
         """Initialize bot with optimizations"""
         await self.marzban.get_token()
         self._create_default_services()
-
+        
         # Start background tasks
         asyncio.create_task(self.system_monitor.start_monitoring())
         asyncio.create_task(self.cleanup_manager.start_cleanup())
@@ -212,7 +212,7 @@ class VPNBot:
         """Show available services"""
         try:
             services = self.db.get_active_services()
-
+            
             keyboard = []
             for service in services:
                 keyboard.append([
@@ -221,15 +221,15 @@ class VPNBot:
                         callback_data=f"service_{service.id}"     # service id
                     )
                 ])
-
+            
             keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')])
             reply_markup = InlineKeyboardMarkup(keyboard)
-
+            
             await update.callback_query.edit_message_text(
                 "📦 لطفاً سرویس مورد نظر خود را انتخاب کنید:",
                 reply_markup=reply_markup
             )
-
+            
         except Exception as e:
             logger.error(f"Error in show_services: {e}")
             await update.callback_query.edit_message_text(
@@ -258,7 +258,7 @@ class VPNBot:
             user_id = update.effective_user.id
             user = self.db.get_user(user_id)
             active_services = self.db.get_user_active_services(user.id)
-
+            
             text = f"""
 👤 اطلاعات حساب کاربری:
 💰 موجودی کیف پول: {user.wallet_balance} تومان
@@ -269,7 +269,7 @@ class VPNBot:
                 expire_date = service[4]
                 remaining_days = (expire_date - datetime.utcnow()).days
                 remaining_gb = (service[5] - service[6]) / 1024  # Convert to GB
-
+                
                 text += f"""
 • {service[8]}  # service name
 📅 {remaining_days} روز مانده
@@ -281,10 +281,10 @@ class VPNBot:
                 [InlineKeyboardButton("🔄 تمدید سرویس", callback_data='extend_service')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')]
             ]
-
+            
             reply_markup = InlineKeyboardMarkup(keyboard)
             await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
-
+            
         except Exception as e:
             logger.error(f"Error in show_user_account: {e}")
             await update.callback_query.edit_message_text(
@@ -296,15 +296,15 @@ class VPNBot:
         try:
             query = update.callback_query
             service_id = int(query.data.split('_')[1])
-
+            
             # Get user and service
             user = self.db.get_user(update.effective_user.id)
             service = self.db.get_service(service_id)
-
+            
             if not service:
                 await query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
                 return
-
+            
             if user.wallet_balance < service.price:  # wallet_balance < price
                 await query.edit_message_text(
                     MESSAGES["insufficient_balance"],
@@ -313,13 +313,13 @@ class VPNBot:
                     ]])
                 )
                 return
-
+            
             # Show purchase confirmation
             keyboard = [
                 [InlineKeyboardButton("✅ تایید و پرداخت", callback_data=f'confirm_purchase_{service_id}')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='buy_service')]
             ]
-
+            
             text = f"""
 🛍 خرید سرویس:
 نام: {service.name}
@@ -329,12 +329,12 @@ class VPNBot:
 
 💰 موجودی کیف پول: {user.wallet_balance:,} تومان
 """
-
+            
             await query.edit_message_text(
                 text,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
-
+            
         except Exception as e:
             logger.error(f"Error in handle_service_purchase: {e}")
             await update.callback_query.edit_message_text(
@@ -453,32 +453,32 @@ class VPNBot:
             await query.edit_message_text("❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید.")
         except Exception as e:
             logger.error(f"Error in handle_purchase_confirmation: {e}")
-            await query.edit_message_text("❌ خطا در تایید خرید. لطفاً با پشتیبانی تماس بگیرید.")
-
+            await query.edit_message_text("❌ خطا در تایید خرید. لطفاً با پشتیبانی تماس بگیرید.")        
+    
     async def handle_wallet_charge(self, update: Update, context: CallbackContext):
         """Handle wallet charge request"""
         try:
             query = update.callback_query
-
+            
             amounts = [50000, 100000, 200000, 500000]
             keyboard = []
-
+            
             for amount in amounts:
                 keyboard.append([
                     InlineKeyboardButton(
                         f"💰 {amount:,} تومان",
-                        callback_data=f'charge_{amount}'
+                        callback_data=f'charge_{amount}'   
                     )
                 ])
-
+            
             keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')])
             reply_markup = InlineKeyboardMarkup(keyboard)
-
+            
             await query.edit_message_text(
                 "💳 لطفا مبلغ شارژ کیف پول را انتخاب کنید:",
                 reply_markup=reply_markup
             )
-
+            
         except Exception as e:
             logger.error(f"Error in handle_wallet_charge: {e}")
             await update.callback_query.edit_message_text(
@@ -490,11 +490,11 @@ class VPNBot:
         try:
             query = update.callback_query
             amount = int(query.data.split('_')[1])
-
+            
             # Get random card number
             card_number = PAYMENT_METHODS["card"]["numbers"][0]
             card_holder = PAYMENT_METHODS["card"]["name"]
-
+            
             # Create pending transaction
             user = self.db.get_user(update.effective_user.id)
             transaction_id = self.db.create_transaction(
@@ -503,7 +503,7 @@ class VPNBot:
                 type_='deposit',
                 status='pending'
             )
-
+            
             text = f"""
 💳 اطلاعات پرداخت:
 مبلغ: {amount:,} تومان
@@ -512,17 +512,17 @@ class VPNBot:
 
 پس از واریز، روی دکمه زیر کلیک کنید.
 """
-
+            
             keyboard = [[
                 InlineKeyboardButton("✅ پرداخت انجام شد", callback_data=f'confirm_payment_{transaction_id}_{amount}')
             ]]
-
+            
             await query.edit_message_text(
                 text,
                 parse_mode='Markdown',
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
-
+            
         except Exception as e:
             logger.error(f"Error in process_payment: {e}")
             await update.callback_query.edit_message_text(
@@ -534,20 +534,20 @@ class VPNBot:
         try:
             query = update.callback_query
             transaction_id, amount = map(int, query.data.split('_')[2:])
-
+            
             # Update transaction status
             self.db.update_transaction_status(transaction_id, 'completed')
-
+            
             # Get user and update balance
             self.db.update_user_balance(update.effective_user.id, amount)
-
+            
             await query.edit_message_text(
                 "✅ پرداخت شما با موفقیت انجام شد و کیف پول شما شارژ شد.",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("🔙 بازگشت به منو", callback_data='back_to_main')]
                 ])
             )
-
+            
         except Exception as e:
             logger.error(f"Error in handle_payment_confirmation: {e}")
             await query.edit_message_text(
@@ -559,7 +559,7 @@ class VPNBot:
         try:
             if update.effective_user.id != ADMIN_ID:
                 return
-
+            
             keyboard = [
                 [InlineKeyboardButton("📊 گزارش فروش", callback_data='admin_sales_report')],
                 [InlineKeyboardButton("👥 مدیریت کاربران", callback_data='admin_users')],
@@ -568,24 +568,24 @@ class VPNBot:
                 [InlineKeyboardButton("⚙️ تنظیمات سرویس‌ها", callback_data='admin_services')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')]
             ]
-
+            
             reply_markup = InlineKeyboardMarkup(keyboard)
             await update.callback_query.edit_message_text(
                 "⚙️ پنل مدیریت\nلطفا یک گزینه را انتخاب کنید:",
                 reply_markup=reply_markup
             )
-
+            
         except Exception as e:
             logger.error(f"Error in show_admin_panel: {e}")
             await update.callback_query.edit_message_text(
                 "❌ خطا در نمایش پنل مدیریت. لطفاً مجدداً تلاش کنید."
             )
 
-    async def show_sales_report(self, update: Update, context: CallbackContext):
+    async def show_sales_report(self, update: Update, context: CallbackContext): 
         """Show sales report"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+        
         with Session(self.db.engine) as session:
             # Daily sales
             today = datetime.utcnow().date()
@@ -594,7 +594,7 @@ class VPNBot:
                 Transaction.status == 'completed',
                 Transaction.created_at >= today
             ).all()
-
+            
             # Weekly sales
             week_ago = today - timedelta(days=7)
             weekly_sales = session.query(Transaction).filter(
@@ -602,7 +602,7 @@ class VPNBot:
                 Transaction.status == 'completed',
                 Transaction.created_at >= week_ago
             ).all()
-
+            
             # Monthly sales
             month_ago = today - timedelta(days=30)
             monthly_sales = session.query(Transaction).filter(
@@ -610,7 +610,7 @@ class VPNBot:
                 Transaction.status == 'completed',
                 Transaction.created_at >= month_ago
             ).all()
-
+            
             report = f"""
 📊 گزارش فروش:
 
@@ -626,12 +626,12 @@ class VPNBot:
 تعداد: {len(monthly_sales)}
 مبلغ: {sum(t.amount for t in monthly_sales):,} تومان
 """
-
+            
             keyboard = [
                 [InlineKeyboardButton("📈 گزارش تفصیلی", callback_data='detailed_report')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
             ]
-
+            
             reply_markup = InlineKeyboardMarkup(keyboard)
             await update.callback_query.edit_message_text(report, reply_markup=reply_markup)
 
@@ -639,14 +639,14 @@ class VPNBot:
         """Manage users"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         with Session(self.db.engine) as session:
             # Get users statistics
             total_users = session.query(User).count()
             active_users = session.query(User).join(UserService).filter(
                 UserService.is_active == True
             ).distinct().count()
-
+            
             text = f"""
 👥 مدیریت کاربران
 
@@ -655,15 +655,15 @@ class VPNBot:
 
 برای مدیریت کاربران از گزینه‌های زیر استفاده کنید:
 """
-
+            
             keyboard = [
                 [InlineKeyboardButton("📊 کاربران فعال", callback_data='active_users')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
             ]
-
+            
             reply_markup = InlineKeyboardMarkup(keyboard)
             await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
-
+    
     async def show_active_users(self, update: Update, context: CallbackContext):
         """Show active users"""
         with Session(self.db.engine) as session:
@@ -678,11 +678,11 @@ class VPNBot:
             text = "📋 کاربران فعال:\n"
             for user in active_users:
                 text += f"👤 {user.username} - ID: {user.telegram_id}\n"
-
+            
             keyboard = [
                 [InlineKeyboardButton("🔙 بازگشت به مدیریت کاربران", callback_data='admin_users')]
              ]
-
+        
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             await update.callback_query.edit_message_text(text)
@@ -691,45 +691,47 @@ class VPNBot:
         """Send broadcast message to users"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         keyboard = [
             [InlineKeyboardButton("👥 همه کاربران", callback_data='broadcast_all')],
             [InlineKeyboardButton("✅ کاربران فعال", callback_data='broadcast_active')],
             [InlineKeyboardButton("❌ کاربران غیرفعال", callback_data='broadcast_inactive')],
             [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
         ]
-
+        
         reply_markup = InlineKeyboardMarkup(keyboard)
-
+        
         message_text = "📨 ارسال پیام همگانی\n\nلطفا گروه هدف را انتخاب کنید:"
-        print(update.callback_query)
-        print(update.callback_query.message)
-        # print(update.callback_query.message.text)
-        print(message_text)
-        # and update.callback_query.message.text != message_text
-        if update.callback_query and update.callback_query.message:
-            await update.callback_query.edit_message_text(
-                message_text,
-                reply_markup=reply_markup
-            )
-        elif update.callback_query and update.callback_query.message is None:
-            await update.effective_message.reply_text(
-                message_text,
-                reply_markup=reply_markup
-            )
+        try:
+            if update.callback_query:
+                await update.callback_query.edit_message_text(
+                    message_text,
+                    reply_markup=reply_markup
+                )
+            elif update.message:
+                await update.message.reply_text(
+                    message_text,
+                    reply_markup=reply_markup
+                )
+            else:
+                logger.error("No callback query or message found in the update.")
+                return
 
-        context.user_data['admin_state'] = 'waiting_broadcast_message'
+            context.user_data['admin_state'] = 'waiting_broadcast_message'
+        except Exception as e:
+            logger.error(f"Error in broadcast_message: {e}")
+            await update.message.reply_text("خطا در پردازش درخواست. لطفا دوباره امتحان کنید.")
 
     async def handle_broadcast_message(self, update: Update, context: CallbackContext):
         #TODO: handle broadcast message
         """Handle broadcast message text"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         message = update.message.text
         target = context.user_data.get('broadcast_target', 'all')
         print(target)
-
+        
         with Session(self.db.engine) as session:
             if target == 'all':
                 users = session.query(User).all()
@@ -741,10 +743,10 @@ class VPNBot:
                 users = session.query(User).outerjoin(UserService).filter(
                     UserService.id == None
                 ).all()
-
+            
             success = 0
             failed = 0
-
+            
             for user in users:
                 try:
                     await context.bot.send_message(user.telegram_id, message)
@@ -752,13 +754,13 @@ class VPNBot:
                 except Exception as e:
                     logger.error(f"Failed to send broadcast to user {user.telegram_id}: {e}")
                     failed += 1
-
+            
             await update.message.reply_text(
                 f"📨 نتیجه ارسال پیام همگانی:\n"
                 f"✅ موفق: {success}\n"
                 f"❌ ناموفق: {failed}"
             )
-
+            
         context.user_data.pop('admin_state', None)
         context.user_data.pop('broadcast_target', None)
 
@@ -766,7 +768,7 @@ class VPNBot:
         """Manage services settings"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         #TODO handle each key sepratedly
         keyboard = [
             [InlineKeyboardButton("➕ افزودن سرویس", callback_data='add_service')],
@@ -775,7 +777,7 @@ class VPNBot:
             [InlineKeyboardButton("⚙️ تنظیمات اینباند", callback_data='inbound_settings')],
             [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
         ]
-
+        
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.callback_query.edit_message_text(
             "⚙️ مدیریت سرویس‌ها و تنظیمات\nلطفا یک گزینه را انتخاب کنید:",
@@ -787,7 +789,7 @@ class VPNBot:
         """Start adding new service"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         context.user_data['admin_state'] = 'adding_service_name'
         await update.callback_query.edit_message_text(
             "لطفا نام سرویس جدید را وارد کنید:",
@@ -795,22 +797,22 @@ class VPNBot:
                 InlineKeyboardButton("🔙 انصراف", callback_data='manage_services')
             ]])
         )
-
-
+        
+        
     async def handle_service_input(self, update: Update, context: CallbackContext):
         """Handle service creation input"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         state = context.user_data.get('admin_state', '')
         if not state.startswith('adding_service_'):
             return
-
+            
         if state == 'adding_service_name':
             context.user_data['new_service'] = {'name': update.message.text}
             context.user_data['admin_state'] = 'adding_service_price'
             await update.message.reply_text("لطفا قیمت سرویس را به تومان وارد کنید:")
-
+            
         elif state == 'adding_service_price':
             try:
                 price = int(update.message.text)
@@ -819,7 +821,7 @@ class VPNBot:
                 await update.message.reply_text("لطفا مدت زمان سرویس را به روز وارد کنید:")
             except ValueError:
                 await update.message.reply_text("لطفا یک عدد صحیح وارد کنید.")
-
+                
         elif state == 'adding_service_duration':
             try:
                 duration = int(update.message.text)
@@ -828,7 +830,7 @@ class VPNBot:
                 await update.message.reply_text("لطفا حجم سرویس را به گیگابایت وارد کنید:")
             except ValueError:
                 await update.message.reply_text("لطفا یک عدد صحیح وارد کنید.")
-
+                
         elif state == 'adding_service_data_limit':
             try:
                 data_limit = float(update.message.text)
@@ -836,12 +838,12 @@ class VPNBot:
                 new_service['data_limit'] = data_limit
                 new_service['is_active'] = True
                 new_service['inbound_id'] = 1  # Default inbound ID
-
+                
                 with Session(self.db.engine) as session:
                     service = Service(**new_service)
                     session.add(service)
                     session.commit()
-
+                
                 await update.message.reply_text(
                     f"✅ سرویس جدید با موفقیت اضافه شد:\n\n"
                     f"نام: {new_service['name']}\n"
@@ -849,10 +851,10 @@ class VPNBot:
                     f"مدت: {new_service['duration']} روز\n"
                     f"حجم: {new_service['data_limit']} GB"
                 )
-
+                
                 context.user_data.pop('admin_state', None)
                 context.user_data.pop('new_service', None)
-
+                
             except ValueError:
                 await update.message.reply_text("لطفا یک عدد صحیح یا اعشاری وارد کنید.")
 
@@ -860,11 +862,11 @@ class VPNBot:
         """Show services for editing"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         with Session(self.db.engine) as session:
             services = session.query(Service).all()
             keyboard = []
-
+            
             for service in services:
                 status = "✅" if service.is_active else "❌"
                 keyboard.append([
@@ -873,10 +875,10 @@ class VPNBot:
                         callback_data=f'edit_service_{service.id}'
                     )
                 ])
-
+            
             keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data='manage_services')])
             reply_markup = InlineKeyboardMarkup(keyboard)
-
+            
             await update.callback_query.edit_message_text(
                 "📝 لیست سرویس‌ها:\nبرای ویرایش روی سرویس مورد نظر کلیک کنید:",
                 reply_markup=reply_markup
@@ -886,16 +888,16 @@ class VPNBot:
         """Show service editing options"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         query = update.callback_query
         service_id = int(query.data.split('_')[2])
-
+        
         with Session(self.db.engine) as session:
             service = session.query(Service).filter_by(id=service_id).first()
             if not service:
                 await query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
                 return
-
+                
             status = "فعال ✅" if service.is_active else "غیرفعال ❌"
             text = f"""
 🔧 ویرایش سرویس:
@@ -914,7 +916,7 @@ class VPNBot:
                 [InlineKeyboardButton("❌ حذف سرویس", callback_data=f'delete_service_{service_id}')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='edit_services')]
             ]
-
+            
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup)
     async def renewal_settings(self, update: Update, context: CallbackContext):
@@ -928,21 +930,21 @@ class VPNBot:
             if not services:
                 await update.callback_query.edit_message_text("❌ هیچ سرویسی برای تمدید یافت نشد.")
                 return
-
+            
             # Create a keyboard to list services
             keyboard = [
                 [InlineKeyboardButton(f"{service.name} - {service.price:,} تومان", callback_data=f'renew_{service.id}')]
                 for service in services
             ]
             keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')])
-
+            
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             await update.callback_query.edit_message_text(
                 "⚙️ لطفا سرویس مورد نظر برای تمدید را انتخاب کنید:",
                 reply_markup=reply_markup
             )
-
+            
         except Exception as e:
             logger.error(f"Error in renewal settings: {e}")
             await update.callback_query.edit_message_text("❌ خطا در دریافت اطلاعات سرویس‌ها.")
@@ -951,13 +953,13 @@ class VPNBot:
         """Manage discount codes"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         keyboard = [
             [InlineKeyboardButton("➕ کد تخفیف جدید", callback_data='add_discount')],
             [InlineKeyboardButton("📋 لیست کدهای تخفیف", callback_data='list_discounts')], #TODO: create this call_back
             [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
         ]
-
+        
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.callback_query.edit_message_text(
             "🎁 مدیریت کدهای تخفیف\nلطفا یک گزینه را انتخاب کنید:",
@@ -971,25 +973,25 @@ class VPNBot:
 
         with Session(self.db.engine) as session:
             discount_codes = session.query(DiscountCode).all()
-
+            
             if not discount_codes:
                 await update.callback_query.edit_message_text("❌ هیچ کد تخفیفی یافت نشد.")
                 return
-
+            
             text = "📋 لیست کدهای تخفیف:\n"
             for code in discount_codes:
                 status = "✅ فعال" if code.is_active else "❌ غیرفعال"
                 text += f"💳 کد: {code.code} - نوع: {code.type} - مقدار: {code.amount} - وضعیت: {status}\n"
 
             await update.callback_query.edit_message_text(text)
-
-
+    
+    
     async def add_discount_code(self, update: Update, context: CallbackContext):
         #TODO: handle add discount % and static $
         """Start adding new discount code"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         context.user_data['admin_state'] = 'adding_discount_code'
         await update.callback_query.edit_message_text(
             "لطفا کد تخفیف را وارد کنید:",
@@ -1002,7 +1004,7 @@ class VPNBot:
         """Handle discount code creation input"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         state = context.user_data.get('admin_state', '')
 
         if state == 'adding_discount_code':
@@ -1017,8 +1019,8 @@ class VPNBot:
                 "نوع تخفیف را انتخاب کنید:",
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
-
-
+            
+           
         elif state == 'adding_discount_amount':
             user_input = update.message.text.strip()
             new_discount = context.user_data['new_discount']
@@ -1070,13 +1072,13 @@ class VPNBot:
 
             except ValueError:
                 await update.message.reply_text("لطفا یک عدد معتبر وارد کنید.")
-
-
+            
+    
     async def handle_discount_type(self, update: Update, context: CallbackContext):
         query = update.callback_query
         await query.answer()
 
-
+        
         if query.data == 'discount_type_percent':
             context.user_data['new_discount'] = {'type': 'percent'}
             await query.edit_message_text("لطفا مقدار تخفیف درصدی را وارد کنید:")
@@ -1084,11 +1086,11 @@ class VPNBot:
                 discount_value = context.user_data['new_discount']['value']
                 discount_type = context.user_data['new_discount']['type']
 
-
+            
                 await self.save_discount_code(discount_type, discount_value)
                 await query.edit_message_text("✅ کد تخفیف با موفقیت ذخیره شد.")
             else:
-                await query.edit_message_text("❌ مقدار تخفیف دریافت نشد.")
+                await query.edit_message_text("❌ مقدار تخفیف دریافت نشد.") 
 
         elif query.data == 'discount_type_fixed':
             context.user_data['new_discount'] = {'type': 'fixed'}
@@ -1097,7 +1099,7 @@ class VPNBot:
                 discount_value = context.user_data['new_discount']['value']
                 discount_type = context.user_data['new_discount']['type']
 
-
+            
                 await self.save_discount_code(discount_type, discount_value)
                 await query.edit_message_text("✅ کد تخفیف با موفقیت ذخیره شد.")
             else:
@@ -1107,13 +1109,13 @@ class VPNBot:
         """Show transaction management options"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         keyboard = [
             [InlineKeyboardButton("💰 تراکنش‌های در انتظار", callback_data='pending_transactions')],
             [InlineKeyboardButton("📊 گزارش تراکنش‌ها", callback_data='transaction_report')],
             [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
         ]
-
+        
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.callback_query.edit_message_text(
             "💳 مدیریت تراکنش‌ها\nلطفا یک گزینه را انتخاب کنید:",
@@ -1124,12 +1126,12 @@ class VPNBot:
         """Show pending transactions"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         with Session(self.db.engine) as session:
             transactions = session.query(Transaction).filter_by(
                 status='pending'
             ).order_by(Transaction.created_at.desc()).all()
-
+            
             if not transactions:
                 await update.callback_query.edit_message_text(
                     "هیچ تراکنش در انتظاری وجود ندارد.",
@@ -1138,7 +1140,7 @@ class VPNBot:
                     ]])
                 )
                 return
-
+            
             for transaction in transactions:
                 user = session.query(User).filter_by(id=transaction.user_id).first()
                 keyboard = [
@@ -1147,7 +1149,7 @@ class VPNBot:
                         InlineKeyboardButton("❌ رد", callback_data=f'reject_transaction_{transaction.id}')
                     ]
                 ]
-
+                
                 await context.bot.send_message(
                     update.effective_user.id,
                     f"""
@@ -1163,19 +1165,19 @@ class VPNBot:
         """Handle transaction approval/rejection"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         query = update.callback_query
         action, transaction_id = query.data.split('_')[1:]
         transaction_id = int(transaction_id)
-
+        
         with Session(self.db.engine) as session:
             transaction = session.query(Transaction).filter_by(id=transaction_id).first()
             if not transaction or transaction.status != 'pending':
                 await query.edit_message_text("❌ تراکنش مورد نظر یافت نشد یا قبلا بررسی شده است.")
                 return
-
+                
             user = session.query(User).filter_by(id=transaction.user_id).first()
-
+            
             if action == 'approve':
                 transaction.status = 'completed'
                 user.wallet_balance += transaction.amount
@@ -1183,15 +1185,15 @@ class VPNBot:
             else:
                 transaction.status = 'rejected'
                 message = f"❌ تراکنش شما به مبلغ {transaction.amount:,} تومان رد شد."
-
+            
             session.commit()
-
+            
             # Notify user
             try:
                 await context.bot.send_message(user.telegram_id, message)
             except Exception as e:
                 logger.error(f"Failed to notify user {user.telegram_id}: {e}")
-
+            
             await query.edit_message_text("✅ عملیات با موفقیت انجام شد.")
 
     async def setup_notifications(self):
@@ -1215,7 +1217,7 @@ class VPNBot:
                 UserService.expire_date <= expiring_date,
                 UserService.expire_date > datetime.utcnow()
             ).all()
-
+            
             for service in services:
                 days_left = (service.expire_date - datetime.utcnow()).days
                 try:
@@ -1236,7 +1238,7 @@ class VPNBot:
             active_services = session.query(UserService).filter(
                 UserService.is_active == True
             ).all()
-
+            
             for service in active_services:
                 remaining_gb = (service.data_limit - service.data_used) / 1024
                 if remaining_gb <= SUBSCRIPTION_REMINDER_DATA:
@@ -1256,11 +1258,11 @@ class VPNBot:
         """Manage inbound settings"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         try:
             inbounds = await self.marzban.get_inbounds()
             keyboard = []
-
+            
             for inbound in inbounds:
                 status = "✅" if inbound["enable"] else "❌"
                 keyboard.append([
@@ -1269,15 +1271,15 @@ class VPNBot:
                         callback_data=f'inbound_{inbound["id"]}'
                     )
                 ])
-
+            
             keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data='manage_services')])
             reply_markup = InlineKeyboardMarkup(keyboard)
-
+            
             await update.callback_query.edit_message_text(
                 "⚙️ مدیریت اینباندها\nبرای تغییر تنظیمات روی اینباند مورد نظر کلیک کنید:",
                 reply_markup=reply_markup
             )
-
+            
         except Exception as e:
             logger.error(f"Error getting inbounds: {e}")
             await update.callback_query.edit_message_text(
@@ -1288,14 +1290,14 @@ class VPNBot:
         """Show inbound editing options"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         query = update.callback_query
         inbound_id = int(query.data.split('_')[1])
-
+        
         try:
             inbound = await self.marzban.get_inbound(inbound_id)
             status = "فعال ✅" if inbound["enable"] else "غیرفعال ❌"
-
+            
             text = f"""
 🔧 ویرایش اینباند:
 نام: {inbound['tag']}
@@ -1303,16 +1305,16 @@ class VPNBot:
 پروتکل: {inbound['protocol']}
 وضعیت: {status}
             """
-
+            
             keyboard = [
                 [InlineKeyboardButton("🔄 تغییر وضعیت", callback_data=f'toggle_inbound_{inbound_id}')],
                 [InlineKeyboardButton("📝 ویرایش پورت", callback_data=f'edit_inbound_port_{inbound_id}')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='manage_inbounds')]
             ]
-
+            
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup)
-
+            
         except Exception as e:
             logger.error(f"Error getting inbound details: {e}")
             await query.edit_message_text("❌ خطا در دریافت اطلاعات اینباند")
@@ -1321,21 +1323,21 @@ class VPNBot:
         """Toggle inbound status"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         query = update.callback_query
         inbound_id = int(query.data.split('_')[2])
-
+        
         try:
             inbound = await self.marzban.get_inbound(inbound_id)
             new_status = not inbound["enable"]
-
+            
             await self.marzban.update_inbound(inbound_id, {"enable": new_status})
-
+            
             status_text = "فعال ✅" if new_status else "غیرفعال ❌"
             await query.edit_message_text(
                 f"✅ وضعیت اینباند {inbound['tag']} به {status_text} تغییر کرد."
             )
-
+            
         except Exception as e:
             logger.error(f"Error toggling inbound: {e}")
             await query.edit_message_text("❌ خطا در تغییر وضعیت اینباند")
@@ -1344,7 +1346,7 @@ class VPNBot:
         """Show detailed report options"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         keyboard = [
             [InlineKeyboardButton("📊 گزارش روزانه", callback_data='report_daily')],
             [InlineKeyboardButton("📈 گزارش هفتگی", callback_data='report_weekly')],
@@ -1353,7 +1355,7 @@ class VPNBot:
             [InlineKeyboardButton("💾 ذخیره گزارش", callback_data='save_report')],
             [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
         ]
-
+        
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.callback_query.edit_message_text(
             "📊 گزارش‌گیری تفصیلی\nلطفا نوع گزارش را انتخاب کنید:",
@@ -1369,18 +1371,18 @@ class VPNBot:
                 Transaction.status == 'completed',
                 Transaction.created_at.between(start_date, end_date)
             ).all()
-
+            
             # User statistics
             new_users = session.query(User).filter(
                 User.created_at.between(start_date, end_date)
             ).count()
-
+            
             active_services = session.query(UserService).filter(
                 UserService.is_active == True,
                 UserService.created_at <= end_date,
                 UserService.expire_date > end_date
             ).count()
-
+            
             # Most popular services
             service_stats = {}
             for sale in sales:
@@ -1391,7 +1393,7 @@ class VPNBot:
                 if service:
                     service_name = service.service.name
                     service_stats[service_name] = service_stats.get(service_name, 0) + 1
-
+            
             report = {
                 'period': {
                     'start': start_date.strftime('%Y-%m-%d'),
@@ -1407,14 +1409,14 @@ class VPNBot:
                 },
                 'popular_services': service_stats
             }
-
+            
             return report
 
     async def show_report(self, update: Update, context: CallbackContext):
         """Show generated report"""
         query = update.callback_query
         report_type = query.data.split('_')[1]
-
+        
         end_date = datetime.utcnow()
         if report_type == 'daily':
             start_date = end_date - timedelta(days=1)
@@ -1429,9 +1431,9 @@ class VPNBot:
                 "لطفا تاریخ شروع را به فرمت YYYY-MM-DD وارد کنید:"
             )
             return
-
+        
         report = await self.generate_report(start_date, end_date)
-
+        
         text = f"""
 📊 گزارش {report_type}:
 از تاریخ {report['period']['start']} تا {report['period']['end']}
@@ -1452,12 +1454,12 @@ class VPNBot:
             reverse=True
         )[:5]:
             text += f"• {service}: {count} فروش\n"
-
+        
         keyboard = [
             [InlineKeyboardButton("💾 ذخیره گزارش", callback_data=f'save_report_{report_type}')],
             [InlineKeyboardButton("🔙 بازگشت", callback_data='detailed_report')]
         ]
-
+        
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text, reply_markup=reply_markup)
 
@@ -1465,7 +1467,7 @@ class VPNBot:
         """Show backup management options"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         keyboard = [
             [InlineKeyboardButton("📦 پشتیبان‌گیری کامل", callback_data='backup_full')],
             [InlineKeyboardButton("👥 پشتیبان کاربران", callback_data='backup_users')],
@@ -1474,7 +1476,7 @@ class VPNBot:
             [InlineKeyboardButton("📋 لیست پشتیبان‌ها", callback_data='list_backups')],
             [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
         ]
-
+        
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.callback_query.edit_message_text(
             "💾 مدیریت نسخه‌های پشتیبان\nلطفا یک گزینه را انتخاب کنید:",
@@ -1486,10 +1488,10 @@ class VPNBot:
         try:
             timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
             filename = f"backup_{backup_type}_{timestamp}.json"
-
+            
             with Session(self.db.engine) as session:
                 data = {}
-
+                
                 if backup_type in ['full', 'users']:
                     users = session.query(User).all()
                     data['users'] = [
@@ -1502,7 +1504,7 @@ class VPNBot:
                         }
                         for user in users
                     ]
-
+                
                 if backup_type in ['full', 'services']:
                     services = session.query(Service).all()
                     data['services'] = [
@@ -1516,7 +1518,7 @@ class VPNBot:
                         }
                         for service in services
                     ]
-
+                
                 if backup_type in ['full', 'transactions']:
                     transactions = session.query(Transaction).all()
                     data['transactions'] = [
@@ -1529,11 +1531,11 @@ class VPNBot:
                         }
                         for tx in transactions
                     ]
-
+                
                 # Save backup file
                 with open(f'backups/{filename}', 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
-
+                
                 # Create backup record
                 backup = Backup(
                     filename=filename,
@@ -1543,9 +1545,9 @@ class VPNBot:
                 )
                 session.add(backup)
                 session.commit()
-
+                
                 return backup
-
+                
         except Exception as e:
             logger.error(f"Backup creation failed: {e}")
             with Session(self.db.engine) as session:
@@ -1563,15 +1565,15 @@ class VPNBot:
         """Handle backup creation request"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         query = update.callback_query
         backup_type = query.data.split('_')[1]
-
+        
         await query.edit_message_text("⏳ در حال تهیه نسخه پشتیبان...")
-
+        
         try:
             backup = await self.create_backup(backup_type)
-
+            
             # Send backup file to admin
             with open(f'backups/{backup.filename}', 'rb') as f:
                 await context.bot.send_document(
@@ -1584,7 +1586,7 @@ class VPNBot:
 ⏰ زمان: {backup.created_at.strftime('%Y-%m-%d %H:%M:%S')}
                     """
                 )
-
+            
         except Exception as e:
             await query.edit_message_text(f"❌ خطا در تهیه نسخه پشتیبان: {str(e)}")
 
@@ -1592,10 +1594,10 @@ class VPNBot:
         """Show list of available backups"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         with Session(self.db.engine) as session:
             backups = session.query(Backup).order_by(Backup.created_at.desc()).limit(10).all()
-
+            
             if not backups:
                 await update.callback_query.edit_message_text(
                     "هیچ نسخه پشتیبانی یافت نشد.",
@@ -1604,10 +1606,10 @@ class VPNBot:
                     ]])
                 )
                 return
-
+            
             text = "📋 لیست آخرین نسخه‌های پشتیبان:\n\n"
             keyboard = []
-
+            
             for backup in backups:
                 status = "✅" if backup.status == 'completed' else "❌"
                 text += f"""
@@ -1622,27 +1624,27 @@ class VPNBot:
                             callback_data=f'download_backup_{backup.id}'
                         )
                     ])
-
+            
             keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data='manage_backups')])
             reply_markup = InlineKeyboardMarkup(keyboard)
-
+            
             await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
 
     async def download_backup(self, update: Update, context: CallbackContext):
         """Send backup file to admin"""
         if update.effective_user.id != ADMIN_ID:
             return
-
+            
         query = update.callback_query
         backup_id = int(query.data.split('_')[2])
-
+        
         with Session(self.db.engine) as session:
             backup = session.query(Backup).filter_by(id=backup_id).first()
-
+            
             if not backup or backup.status != 'completed':
                 await query.edit_message_text("❌ فایل پشتیبان یافت نشد.")
                 return
-
+            
             try:
                 with open(f'backups/{backup.filename}', 'rb') as f:
                     await context.bot.send_document(
@@ -1658,21 +1660,21 @@ class VPNBot:
         """Handle text messages"""
         user_id = update.effective_user.id
         message = update.message.text
-
+        
         # Handle admin states
         if user_id == ADMIN_ID:
             admin_state = context.user_data.get('admin_state')
             if admin_state:
                 if admin_state == 'waiting_broadcast_message':
-                    self.handle_broadcast_message(update, context)
+                    await self.handle_broadcast_message(update, context)
                     return
                 elif admin_state.startswith('adding_service_'):
-                    self.handle_service_input(update, context)
+                    await self.handle_service_input(update, context)
                     return
                 elif admin_state.startswith('adding_discount_'):
                     await self.handle_discount_input(update, context)
                     return
-
+        
         # Default response
         update.message.reply_text(
             "لطفا از دکمه‌های منو استفاده کنید.",
@@ -1685,22 +1687,22 @@ class VPNBot:
         """Return to main menu"""
         try:
             user_id = update.effective_user.id
-
+            
             keyboard = [
                 [InlineKeyboardButton("🛒 خرید سرویس", callback_data='buy_service')],
                 [InlineKeyboardButton("👤 حساب کاربری", callback_data='user_account')],
                 [InlineKeyboardButton("📊 اطلاعات سرویس", callback_data='service_info')]
             ]
-
+            
             if user_id == ADMIN_ID:
                 keyboard.append([InlineKeyboardButton("⚙️ پنل مدیریت", callback_data='admin_panel')])
-
+            
             reply_markup = InlineKeyboardMarkup(keyboard)
             await update.callback_query.edit_message_text(
                 MESSAGES["welcome"],
                 reply_markup=reply_markup
             )
-
+            
         except Exception as e:
             logger.error(f"Error in back_to_main: {e}")
             await update.callback_query.edit_message_text(
@@ -1712,7 +1714,7 @@ class VPNBot:
         try:
             user_id = update.effective_user.id
             logger.info(f"Showing service info for user {user_id}")
-
+            
             user = self.db.get_user(user_id)
             if not user:
                 logger.error(f"User {user_id} not found")
@@ -1720,11 +1722,11 @@ class VPNBot:
                     "❌ اطلاعات کاربری شما یافت نشد."
                 )
                 return
-
+            
             logger.info(f"Found user: {user}")
             active_services = self.db.get_user_active_services(user.id)
             logger.info(f"Active services: {active_services}")
-
+            
             if not active_services:
                 text = "❌ شما هیچ سرویس فعالی ندارید."
             else:
@@ -1734,7 +1736,7 @@ class VPNBot:
                         expire_date = service[4]
                         remaining_days = (expire_date - datetime.utcnow()).days
                         remaining_gb = (service[5] - (service[6] or 0)) / 1024  # Convert to GB, handle None
-
+                        
                         text += f"""
 🔹 {service[8]}
 📅 {remaining_days} روز باقیمانده
@@ -1745,15 +1747,15 @@ class VPNBot:
                     except Exception as e:
                         logger.error(f"Error processing service {service}: {e}")
                         continue
-
+            
             keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-
+            
             await update.callback_query.edit_message_text(
                 text,
                 reply_markup=reply_markup
             )
-
+            
         except Exception as e:
             logger.error(f"Error in show_service_info: {str(e)}")
             logger.exception(e)  # This will log the full traceback
@@ -1764,7 +1766,7 @@ class VPNBot:
 class CleanupManager:
     def __init__(self, bot: VPNBot):
         self.bot = bot
-
+        
     async def start_cleanup(self):
         """Start cleanup tasks"""
         while True:
@@ -1780,51 +1782,51 @@ class CleanupManager:
     async def cleanup_expired_users(self):
         """Clean up expired users"""
         cleanup_date = datetime.utcnow() - timedelta(days=CLEANUP_SETTINGS["expired_users_days"])
-
+        
         with Session(self.bot.db.engine) as session:
             expired_services = session.query(UserService).filter(
                 UserService.is_active == False,
                 UserService.expire_date < cleanup_date
             ).all()
-
+            
             for service in expired_services:
                 try:
                     # Delete from Marzban
                     await self.bot.marzban.delete_user(service.marzban_username)
                 except Exception as e:
                     logger.error(f"Error deleting Marzban user: {e}")
-
+                
                 # Delete from database
                 session.delete(service)
-
+            
             session.commit()
 
     async def cleanup_old_logs(self):
         """Clean up old logs"""
         cleanup_date = datetime.utcnow() - timedelta(days=CLEANUP_SETTINGS["old_logs_days"])
-
+        
         with Session(self.bot.db.engine) as session:
             # Clean system logs
             session.query(SystemLog).filter(
                 SystemLog.created_at < cleanup_date
             ).delete()
-
+            
             # Clean error logs
             session.query(ErrorLog).filter(
                 ErrorLog.created_at < cleanup_date
             ).delete()
-
+            
             session.commit()
 
     async def cleanup_old_backups(self):
         """Clean up old backups"""
         cleanup_date = datetime.utcnow() - timedelta(days=CLEANUP_SETTINGS["old_backups_days"])
-
+        
         with Session(self.bot.db.engine) as session:
             old_backups = session.query(Backup).filter(
                 Backup.created_at < cleanup_date
             ).order_by(Backup.created_at.desc())[CLEANUP_SETTINGS["backup_retention_count"]:]
-
+            
             for backup in old_backups:
                 try:
                     # Delete backup file
@@ -1833,13 +1835,13 @@ class CleanupManager:
                     session.delete(backup)
                 except Exception as e:
                     logger.error(f"Error deleting backup: {e}")
-
+            
             session.commit()
 
 class SystemMonitor:
     def __init__(self, bot: VPNBot):
         self.bot = bot
-
+        
     async def start_monitoring(self):
         """Start system monitoring"""
         while True:
@@ -1856,10 +1858,10 @@ class SystemMonitor:
             # Check database connection
             with Session(self.bot.db.engine) as session:
                 session.query(User).first()
-
+            
             # Check Marzban connection
             await self.bot.marzban.get_token()
-
+            
             # Check disk space
             disk_usage = psutil.disk_usage('/')
             if disk_usage.percent > 90:
@@ -1869,13 +1871,13 @@ class SystemMonitor:
                     'High disk usage',
                     {'usage_percent': disk_usage.percent}
                 )
-
+                
                 # Notify admin
                 await self.bot.bot.send_message(
                     ADMIN_ID,
                     f"⚠️ هشدار: فضای دیسک پر شده است ({disk_usage.percent}%)"
                 )
-
+            
             # Check memory usage
             memory = psutil.virtual_memory()
             if memory.percent > 90:
@@ -1885,12 +1887,12 @@ class SystemMonitor:
                     'High memory usage',
                     {'usage_percent': memory.percent}
                 )
-
+                
                 await self.bot.bot.send_message(
                     ADMIN_ID,
                     f"⚠️ هشدار: مصرف حافظه بالاست ({memory.percent}%)"
                 )
-
+            
         except ClientError as e:
             await self.bot.log_manager.log(
                 'ERROR',
