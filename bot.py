@@ -202,7 +202,7 @@ class VPNBot:
             if query.data.startswith('edit_service_details_'):
                 await self.edit_service_details(update , context)
                 
-            if query.data.startswith('edit_service_name_'):
+            if query.data.startswith('edit_service_name'):
                 await self.edit_service_name(update,context)
                 
             if query.data.startswith('edit_service_duration_'):
