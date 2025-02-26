@@ -1021,10 +1021,11 @@ class VPNBot:
 
         elif state == 'adding_discount_amount':
             user_input = update.message.text.strip()
-            new_discount = context.user_data.get('new_discount', {})
+            new_discount = context.user_data.get('new_discount')
 
-            if 'type' not in new_discount:
-                await update.message.reply_text("خطا: نوع تخفیف مشخص نیست. لطفاً دوباره تلاش کنید.")
+            if not new_discount or 'type' not in new_discount:
+                await update.message.reply_text("❌ مقدار تخفیف دریافت نشد. لطفاً از ابتدا تلاش کنید.")
+                context.user_data.pop('admin_state', None)  # Reset state
                 return
 
             try:
@@ -1032,7 +1033,7 @@ class VPNBot:
                     if not user_input.endswith('%'):
                         await update.message.reply_text("لطفا مقدار تخفیف درصدی را با علامت % وارد کنید.")
                         return
-                    amount = float(user_input[:-1])  # Remove '%' and convert
+                    amount = float(user_input[:-1])  # Remove '%' and convert to float
                     if not (0 <= amount <= 100):
                         await update.message.reply_text("لطفا یک مقدار درصدی بین 0 تا 100 وارد کنید.")
                         return
@@ -1070,11 +1071,31 @@ class VPNBot:
                     context.user_data.pop('admin_state', None)
                     context.user_data.pop('new_discount', None)
 
-                except SQLAlchemyError as e:
+                except SQLAlchemyError:
                     await update.message.reply_text("❌ خطا در ذخیره‌سازی کد تخفیف. لطفا دوباره تلاش کنید.")
 
             except ValueError:
                 await update.message.reply_text("❌ لطفا یک عدد معتبر وارد کنید.")
+
+    async def handle_discount_type_selection(self, update: Update, context: CallbackContext):
+        """Handles the selection of discount type (percent or fixed)"""
+        query = update.callback_query
+        await query.answer()
+
+        new_discount = context.user_data.get('new_discount', {})
+
+        if query.data == 'discount_type_percent':
+            new_discount['type'] = 'percent'
+        elif query.data == 'discount_type_fixed':
+            new_discount['type'] = 'fixed'
+        else:
+            await query.message.reply_text("❌ نوع تخفیف نامعتبر است. لطفا دوباره تلاش کنید.")
+            return
+
+        context.user_data['new_discount'] = new_discount  # Ensure it is saved in user_data
+        context.user_data['admin_state'] = 'adding_discount_amount'
+
+        await query.message.reply_text("لطفاً مقدار تخفیف را وارد کنید:")
 
     async def handle_discount_type(self, update: Update, context: CallbackContext):
         query = update.callback_query
