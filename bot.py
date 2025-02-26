@@ -772,9 +772,12 @@ class VPNBot:
             await update.message.reply_text("Please select a target group first.")
             return
 
+        # Encode the message to ensure it's safe for callback data
+        encoded_message = urllib.parse.quote(message)
+
         # Confirm the message before sending
         confirm_keyboard = [
-            [InlineKeyboardButton("Confirm", callback_data=f"confirm_{message}")],
+            [InlineKeyboardButton("Confirm", callback_data=f"confirm_{encoded_message}")],
             [InlineKeyboardButton("Cancel", callback_data="cancel")]
         ]
         reply_markup = InlineKeyboardMarkup(confirm_keyboard)
@@ -790,7 +793,16 @@ class VPNBot:
         await query.answer()
 
         # Get the action (confirm or cancel) from callback data
-        action, message = query.data.split("_", 1)
+        callback_data = query.data.split("_", 1)
+
+        if len(callback_data) < 2:
+            await query.edit_message_text("Invalid action received.")
+            return
+
+        action, encoded_message = callback_data
+
+        # Decode the message back
+        message = urllib.parse.unquote(encoded_message)
 
         if action == "confirm":
             # Proceed with sending the message to the selected group
@@ -833,8 +845,6 @@ class VPNBot:
             await query.edit_message_text(
                 text="Broadcast message has been cancelled."
             )
-
-
 
     async def manage_services(self, update: Update, context: CallbackContext):
         """Manage services settings"""
