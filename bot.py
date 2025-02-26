@@ -173,6 +173,8 @@ class VPNBot:
                 'broadcast_active':self.handle_broadcast_message,
                 'broadcast_all' : self.handle_broadcast_message,
                 'inbound_settings' : self.manage_inbound_settings,
+                'add_service' : self.add_service,
+                'edit_services' : self.edit_services
             }
 
             handler = handlers.get(query.data)
@@ -726,11 +728,33 @@ class VPNBot:
         )
     async def manage_inbound_settings(self, update: Update, context: CallbackContext):
         """Manage inbound settings"""
+        if update.effective_user.id != ADMIN_ID:
+            return
+
         try:
-            
-            await update.callback_query.edit_message_text("Manage inbound settings")
+            inbounds = await self.marzban.get_inbounds()
+            keyboard = []
+
+            for inbound in inbounds:
+                status = "✅" if inbound["enable"] else "❌"
+                keyboard.append([ 
+                    InlineKeyboardButton(
+                        f"{status} {inbound['tag']} - پورت: {inbound['port']}",
+                        callback_data=f'inbound_{inbound["id"]}'  # Set callback data for each inbound
+                    )
+                ])
+
+            keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')])
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.callback_query.edit_message_text(
+                "⚙️ مدیریت اینباندها\nبرای تغییر تنظیمات روی اینباند مورد نظر کلیک کنید:",
+                reply_markup=reply_markup
+            )
+
         except Exception as e:
             logger.error(f"Error in managing inbound settings: {e}")
+            await update.callback_query.edit_message_text("❌ خطا در دریافت اطلاعات اینباندها")
 
     async def handle_service_input(self, update: Update, context: CallbackContext):
         """Handle service creation input"""
