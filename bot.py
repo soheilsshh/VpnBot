@@ -374,12 +374,13 @@ class VPNBot:
                     status='completed'
                 )
 
+
                 #create service for user
                 self.db.create_user_service(
                     user_id=user.id,
                     service_id=service.id,
                     marzban_username=str(service.inbound_id),
-                    expire_date=service.expire_date,
+                    expire_date=datetime.utcnow() + timedelta(days=service.duration),
                     data_limit=service.data_limit)
 
                 await query.edit_message_text(
@@ -435,7 +436,7 @@ class VPNBot:
                     user_id=user.id,
                     service_id=service.id,
                     marzban_username=str(service.inbound_id),
-                    expire_date=service.expire_date,
+                    expire_date=datetime.utcnow() + timedelta(days=service.duration),
                     data_limit=service.data_limit)
 
                 await query.edit_message_text(
