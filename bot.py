@@ -692,15 +692,15 @@ class VPNBot:
             return
 
         keyboard = [
-            [InlineKeyboardButton("👥 همه کاربران", callback_data='broadcast_all')],
-            [InlineKeyboardButton("✅ کاربران فعال", callback_data='broadcast_active')],
-            [InlineKeyboardButton("❌ کاربران غیرفعال", callback_data='broadcast_inactive')],
+            # [InlineKeyboardButton("👥 همه کاربران", callback_data='broadcast_all')],
+            # [InlineKeyboardButton("✅ کاربران فعال", callback_data='broadcast_active')],
+            # [InlineKeyboardButton("❌ کاربران غیرفعال", callback_data='broadcast_inactive')],
             [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
         ]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        message_text = "📨 ارسال پیام همگانی\n\nلطفا گروه هدف را انتخاب کنید:"
+        message_text = "📨 ارسال پیام همگانی\n\nلطفا متن پیام خود را وارد کنید:"
         try:
             if update.callback_query:
                 await update.callback_query.edit_message_text(
