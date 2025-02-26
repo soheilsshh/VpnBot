@@ -238,7 +238,9 @@ class VPNBot:
 
     async def create_marzban_user(self, username: str, service: Dict[str, Any]):
         """Create user in Marzban panel"""
+
         #TODO: handle this later
+
         # expire_date = datetime.utcnow() + timedelta(days=service['duration'])
         # user_data = {
         #     "username": username,
@@ -247,6 +249,7 @@ class VPNBot:
         #     "inbound_id": service['inbound_id']
         # }
         # return await self.marzban.create_user(user_data)
+
         return {'success':True}
 
     async def show_user_account(self, update: Update, context: CallbackContext):
@@ -359,6 +362,8 @@ class VPNBot:
 
             if result['success']:
                 # Deduct the price from user's wallet balance
+                print(user.id)
+                print(-service.price)
                 self.db.update_user_balance(user.id, -service.price)
 
                 # Log the transaction
