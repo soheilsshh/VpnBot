@@ -910,7 +910,6 @@ class VPNBot:
                 reply_markup=reply_markup
             )
 
-
     async def edit_service_details(self, update: Update, context: CallbackContext):
         """Show service editing options"""
         if update.effective_user.id != ADMIN_ID:
@@ -919,11 +918,12 @@ class VPNBot:
         query = update.callback_query
 
         try:
-            # Extract service_id from callback_data
-            service_id = int(query.data.split('_')[-1])  # Get the last part of the callback_data
+            service_id = int(query.data.split('_')[-1])
         except (IndexError, ValueError):
             await query.edit_message_text("❌ خطا در دریافت اطلاعات سرویس.")
             return
+
+        context.user_data['edit_service_id'] = service_id  # Store service_id for later use
 
         with Session(self.db.engine) as session:
             service = session.query(Service).filter_by(id=service_id).first()
@@ -941,10 +941,10 @@ class VPNBot:
     وضعیت: {status}
     """
             keyboard = [
-                [InlineKeyboardButton("📝 ویرایش نام", callback_data=f'edit_service_name_{service_id}')],
-                [InlineKeyboardButton("💰 ویرایش قیمت", callback_data=f'edit_service_price_{service_id}')],
-                [InlineKeyboardButton("⏱ ویرایش مدت", callback_data=f'edit_service_duration_{service_id}')],
-                [InlineKeyboardButton("📊 ویرایش حجم", callback_data=f'edit_service_data_limit_{service_id}')],
+                [InlineKeyboardButton("📝 ویرایش نام", callback_data='edit_service_name')],
+                [InlineKeyboardButton("💰 ویرایش قیمت", callback_data='edit_service_price')],
+                [InlineKeyboardButton("⏱ ویرایش مدت", callback_data='edit_service_duration')],
+                [InlineKeyboardButton("📊 ویرایش حجم", callback_data='edit_service_data_limit')],
                 [InlineKeyboardButton("🔄 تغییر وضعیت", callback_data=f'toggle_service_{service_id}')],
                 [InlineKeyboardButton("❌ حذف سرویس", callback_data=f'delete_service_{service_id}')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='edit_services')]
@@ -952,6 +952,51 @@ class VPNBot:
 
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup)
+
+    async def edit_service_field(self, update: Update, context: CallbackContext):
+        """Handle selection of which field to edit"""
+        query = update.callback_query
+        context.user_data['edit_field'] = query.data.replace('edit_service_', '')
+        await query.edit_message_text("لطفا مقدار جدید را وارد کنید:")
+
+    async def handle_edit_service_input(self, update: Update, context: CallbackContext):
+        """Handle user input for editing service attributes"""
+        if update.effective_user.id != ADMIN_ID:
+            return
+
+        new_value = update.message.text.strip()
+        service_id = context.user_data.get('edit_service_id')
+        edit_field = context.user_data.get('edit_field')
+
+        if not service_id or not edit_field:
+            await update.message.reply_text("❌ خطا در دریافت اطلاعات سرویس.")
+            return
+
+        with Session(self.db.engine) as session:
+            service = session.query(Service).filter_by(id=service_id).first()
+            if not service:
+                await update.message.reply_text("❌ سرویس مورد نظر یافت نشد.")
+                return
+
+            try:
+                if edit_field == 'price':
+                    service.price = int(new_value)
+                elif edit_field == 'duration':
+                    service.duration = int(new_value)
+                elif edit_field == 'data_limit':
+                    service.data_limit = float(new_value)
+                elif edit_field == 'name':
+                    service.name = new_value
+                else:
+                    await update.message.reply_text("❌ فیلد ویرایش نامعتبر است.")
+                    return
+
+                session.commit()
+                await update.message.reply_text(f"✅ {edit_field} سرویس با موفقیت تغییر یافت.")
+
+            except ValueError:
+                await update.message.reply_text("❌ مقدار وارد شده معتبر نیست. لطفا دوباره تلاش کنید.")
+
 
     async def edit_service_name(self, update: Update, context: CallbackContext):
         """Save the updated service name"""
