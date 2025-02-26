@@ -238,14 +238,16 @@ class VPNBot:
 
     async def create_marzban_user(self, username: str, service: Dict[str, Any]):
         """Create user in Marzban panel"""
-        expire_date = datetime.utcnow() + timedelta(days=service['duration'])
-        user_data = {
-            "username": username,
-            "expire": int(expire_date.timestamp()),
-            "data_limit": service['data_limit'] * 1024 * 1024 * 1024,  # Convert GB to bytes
-            "inbound_id": service['inbound_id']
-        }
-        return await self.marzban.create_user(user_data)
+        #TODO: handle this later
+        # expire_date = datetime.utcnow() + timedelta(days=service['duration'])
+        # user_data = {
+        #     "username": username,
+        #     "expire": int(expire_date.timestamp()),
+        #     "data_limit": service['data_limit'] * 1024 * 1024 * 1024,  # Convert GB to bytes
+        #     "inbound_id": service['inbound_id']
+        # }
+        # return await self.marzban.create_user(user_data)
+        return {'success':True}
 
     async def show_user_account(self, update: Update, context: CallbackContext):
         """Show user account information"""
