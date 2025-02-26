@@ -941,7 +941,7 @@ class VPNBot:
     وضعیت: {status}
     """
             keyboard = [
-                [InlineKeyboardButton("📝 ویرایش نام", callback_data='edit_service_name')],
+                [InlineKeyboardButton("📝 ویرایش نام", callback_data=f'edit_service_name_{service.id}')],
                 [InlineKeyboardButton("💰 ویرایش قیمت", callback_data='edit_service_price')],
                 [InlineKeyboardButton("⏱ ویرایش مدت", callback_data='edit_service_duration')],
                 [InlineKeyboardButton("📊 ویرایش حجم", callback_data='edit_service_data_limit')],
