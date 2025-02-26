@@ -156,7 +156,6 @@ class VPNBot:
                 'extend_service' : self.handle_extend_service,
                 'admin_sales_report': self.show_sales_report,
                 'admin_users': self.manage_users,
-                'list_discounts': self.handle_list_discounts,
                 'admin_discount_codes': self.manage_discount_codes,
                 'admin_broadcast': self.broadcast_message,
                 'admin_services': self.manage_services,
