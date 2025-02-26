@@ -166,7 +166,12 @@ class VPNBot:
                 'search_user': self.search_user, 
                 'active_users': self.show_active_users,
                 'add_discount': self.add_discount_code,
-                'list_discount_codes': self.list_discount_codes
+                'list_discount_codes': self.list_discount_codes,
+                'discount_type_percent' : self.handle_discount_type,
+                'discount_type_fixed' : self.handle_discount_type,
+                'broadcast_inactive' : self.handle_broadcast_message,
+                'broadcast_active':self.handle_broadcast_message,
+                'broadcast_all' : self.handle_broadcast_message
             }
 
             handler = handlers.get(query.data)
@@ -631,10 +636,18 @@ class VPNBot:
         ]
         
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.callback_query.edit_message_text(
-            "📨 ارسال پیام همگانی\n\nلطفا گروه هدف را انتخاب کنید:",
-            reply_markup=reply_markup
-        )
+        
+        if update.callback_query.message and update.callback_query.message.text != "📨 ارسال پیام همگانی\n\nلطفا گروه هدف را انتخاب کنید:":
+            await update.callback_query.edit_message_text(
+                "📨 ارسال پیام همگانی\n\nلطفا گروه هدف را انتخاب کنید:",
+                reply_markup=reply_markup
+            )
+        elif update.callback_query.message is None:
+            await update.effective_message.reply_text(
+                "📨 ارسال پیام همگانی\n\nلطفا گروه هدف را انتخاب کنید:",
+                reply_markup=reply_markup
+            )
+        
         context.user_data['admin_state'] = 'waiting_broadcast_message'
 
     async def handle_broadcast_message(self, update: Update, context: CallbackContext):
@@ -929,6 +942,48 @@ class VPNBot:
                 
             except ValueError:
                 await update.message.reply_text("لطفا یک عدد صحیح یا اعشاری وارد کنید.")
+    
+    async def handle_discount_type(self, update: Update, context: CallbackContext):
+        query = update.callback_query
+        await query.answer()
+
+        
+        if query.data == 'discount_type_percent':
+            context.user_data['new_discount'] = {'type': 'percent'}
+            await query.edit_message_text("لطفا مقدار تخفیف درصدی را وارد کنید:")
+            if 'new_discount' in context.user_data and 'value' in context.user_data['new_discount']:
+                discount_value = context.user_data['new_discount']['value']
+                discount_type = context.user_data['new_discount']['type']
+
+            
+                await self.save_discount_code(discount_type, discount_value)
+                await query.edit_message_text("✅ کد تخفیف با موفقیت ذخیره شد.")
+            else:
+                await query.edit_message_text("❌ مقدار تخفیف دریافت نشد.") 
+
+        elif query.data == 'discount_type_fixed':
+            context.user_data['new_discount'] = {'type': 'fixed'}
+            await query.edit_message_text("لطفا مقدار تخفیف ثابت را وارد کنید:")
+            if 'new_discount' in context.user_data and 'value' in context.user_data['new_discount']:
+                discount_value = context.user_data['new_discount']['value']
+                discount_type = context.user_data['new_discount']['type']
+
+            
+                await self.save_discount_code(discount_type, discount_value)
+                await query.edit_message_text("✅ کد تخفیف با موفقیت ذخیره شد.")
+            else:
+                await query.edit_message_text("❌ مقدار تخفیف دریافت نشد.")
+
+        
+
+    
+    async def save_discount_code(self, discount_type, discount_value):
+      
+        new_discount = DiscountCode(discount_type=discount_type, discount_value=discount_value)
+        session = Session()  
+        session.add(new_discount)
+        session.commit()
+        session.close()
 
     async def manage_transactions(self, update: Update, context: CallbackContext):
         """Show transaction management options"""
