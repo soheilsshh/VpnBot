@@ -1,5 +1,4 @@
 import asyncio
-import urllib.parse
 import logging
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -722,130 +721,52 @@ class VPNBot:
             logger.error(f"Error in broadcast_message: {e}")
             await update.message.reply_text("خطا در پردازش درخواست. لطفا دوباره امتحان کنید.")
 
-    async def start_broadcast(self, update: Update, context: CallbackContext):
-        """Start the broadcast message process and select target group"""
-        if update.effective_user.id != ADMIN_ID:
-            return
-
-        # Send a message asking the admin to select the target group
-        keyboard = [
-            [InlineKeyboardButton("Send to All Users", callback_data='all')],
-            [InlineKeyboardButton("Send to Active Users", callback_data='active')],
-            [InlineKeyboardButton("Send to Inactive Users", callback_data='inactive')]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await update.message.reply_text(
-            "Please select the target group for the broadcast message:",
-            reply_markup=reply_markup
-        )
-
-    async def handle_broadcast_group_selection(self, update: Update, context: CallbackContext):
-        """Handle the group selection and ask for the broadcast message"""
-        query = update.callback_query
-        await query.answer()
-
-        # Get selected group from callback data
-        selected_group = query.data
-        context.user_data['broadcast_target'] = selected_group
-
-        # Ask the admin for the message to broadcast
-        await query.edit_message_text(
-            text=f"Target group selected: {selected_group}. Now, please send the message you want to broadcast."
-        )
-
     async def handle_broadcast_message(self, update: Update, context: CallbackContext):
         """Handle broadcast message text and send to the selected group"""
         if update.effective_user.id != ADMIN_ID:
             return
 
-        # Ensure update is a message and contains text
+        # Check if the message exists and has text
         if not update.message or not update.message.text:
-            logger.error(f"Invalid update received: {update}")
+            logger.error("No text found in the message.")
             return
 
-        # Log the received message text
         message = update.message.text
         target = context.user_data.get('broadcast_target', 'all')
 
-        # Handle group selection
-        if not target:
-            await update.message.reply_text("Please select a target group first.")
-            return
 
-        # Encode the message to ensure it's safe for callback data
-        encoded_message = urllib.parse.quote(message)
+        with Session(self.db.engine) as session:
+            if target == 'all':
+                users = session.query(User).all()
+            elif target == 'active':
+                users = session.query(User).join(UserService).filter(
+                    UserService.is_active == True
+                ).distinct().all()
+            else:  # 'inactive'
+                users = session.query(User).outerjoin(UserService).filter(
+                    UserService.id == None
+                ).all()
 
-        # Confirm the message before sending
-        confirm_keyboard = [
-            [InlineKeyboardButton("Confirm", callback_data=f"confirm_{encoded_message}")],
-            [InlineKeyboardButton("Cancel", callback_data="cancel")]
-        ]
-        reply_markup = InlineKeyboardMarkup(confirm_keyboard)
+            success, failed = 0, 0
 
-        await update.message.reply_text(
-            f"Your message:\n\n{message}\n\nDo you want to send this message to the selected group?",
-            reply_markup=reply_markup
-        )
+            for user in users:
+                try:
+                    await context.bot.send_message(user.telegram_id, message)
+                    success += 1
+                except Exception as e:
+                    logger.error(f"Failed to send broadcast to {user.telegram_id}: {e}")
+                    failed += 1
 
-    async def handle_message_confirmation(self, update: Update, context: CallbackContext):
-        """Handle the confirmation or cancellation of the broadcast message"""
-        query = update.callback_query
-        await query.answer()
-
-        # Get the action (confirm or cancel) from callback data
-        callback_data = query.data.split("_", 1)
-
-        if len(callback_data) < 2:
-            await query.edit_message_text("Invalid action received.")
-            return
-
-        action, encoded_message = callback_data
-
-        # Decode the message back
-        message = urllib.parse.unquote(encoded_message)
-
-        if action == "confirm":
-            # Proceed with sending the message to the selected group
-            target = context.user_data.get('broadcast_target', 'all')
-
-            with Session(self.db.engine) as session:
-                if target == 'all':
-                    users = session.query(User).all()
-                elif target == 'active':
-                    users = session.query(User).join(UserService).filter(
-                        UserService.is_active == True
-                    ).distinct().all()
-                else:  # 'inactive'
-                    users = session.query(User).outerjoin(UserService).filter(
-                        UserService.id == None
-                    ).all()
-
-                success, failed = 0, 0
-
-                for user in users:
-                    try:
-                        await context.bot.send_message(user.telegram_id, message)
-                        success += 1
-                    except Exception as e:
-                        logger.error(f"Failed to send broadcast to {user.telegram_id}: {e}")
-                        failed += 1
-
-                await query.edit_message_text(
-                    text=f"📨 پیام همگانی ارسال شد:\n"
-                        f"✅ موفق: {success}\n"
-                        f"❌ ناموفق: {failed}"
-                )
-
-            # Clear the state after sending
-            context.user_data.pop('admin_state', None)
-            context.user_data.pop('broadcast_target', None)
-
-        elif action == "cancel":
-            # If the admin cancels the message, notify them
-            await query.edit_message_text(
-                text="Broadcast message has been cancelled."
+            await update.message.reply_text(
+                f"📨 پیام همگانی ارسال شد:\n"
+                f"✅ موفق: {success}\n"
+                f"❌ ناموفق: {failed}"
             )
+
+        # Clear the state after sending
+        context.user_data.pop('admin_state', None)
+        context.user_data.pop('broadcast_target', None)
+
 
     async def manage_services(self, update: Update, context: CallbackContext):
         """Manage services settings"""
