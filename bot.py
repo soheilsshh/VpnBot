@@ -892,11 +892,7 @@ class VPNBot:
         with Session(self.db.engine) as session:
             services = session.query(Service).all()
             keyboard = []
-<<<<<<< HEAD
 
-=======
-            #_{service.id}
->>>>>>> backup-main
             for service in services:
                 status = "✅" if service.is_active else "❌"
                 keyboard.append([
@@ -921,16 +917,13 @@ class VPNBot:
             return
 
         query = update.callback_query
-<<<<<<< HEAD
-        service_id = int(query.data.split('_')[2])
-=======
+
         try:
             # Extract service_id from callback_data
             service_id = int(query.data.split('_')[-1])  # Get the last part of the callback_data
         except (IndexError, ValueError):
             await query.edit_message_text("❌ خطا در دریافت اطلاعات سرویس.")
             return
->>>>>>> backup-main
 
         with Session(self.db.engine) as session:
             service = session.query(Service).filter_by(id=service_id).first()
