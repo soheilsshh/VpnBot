@@ -378,7 +378,7 @@ class VPNBot:
                 self.db.create_user_service(
                     user_id=user.id,
                     service_id=service.id,
-                    marzban_username=service.marzban_username,
+                    marzban_username=str(service.inbound_id),
                     expire_date=service.expire_date,
                     data_limit=service.data_limit)
 
