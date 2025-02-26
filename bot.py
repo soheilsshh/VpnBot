@@ -955,12 +955,12 @@ class VPNBot:
             
     async def edit_service_name(self, update: Update, context: CallbackContext):
         """Save the updated service name"""
-        print("soheillllllllllllllllllllllll")
+
         if update.effective_user.id != ADMIN_ID:
             return
         
         new_name = update.message.text.strip()
-        
+        print(new_name)
         if not new_name:
             await update.message.reply_text("❌ نام سرویس نمی‌تواند خالی باشد.")
             return
