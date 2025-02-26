@@ -374,6 +374,14 @@ class VPNBot:
                     status='completed'
                 )
 
+                #create service for user
+                self.db.create_user_service(
+                    user_id=user.id,
+                    service_id=service.id,
+                    marzban_username=service.marzban_username,
+                    expire_date=service.expire_date,
+                    data_limit=service.data_limit)
+
                 await query.edit_message_text(
                     f"✅ خرید موفقیت‌آمیز بود!\n\n"
                     f"نام سرویس: {service.name}\n"
@@ -421,6 +429,14 @@ class VPNBot:
                     type_='purchase',
                     status='completed'
                 )
+
+                #create service for user
+                self.db.create_user_service(
+                    user_id=user.id,
+                    service_id=service.id,
+                    marzban_username=service.marzban_username,
+                    expire_date=service.expire_date,
+                    data_limit=service.data_limit)
 
                 await query.edit_message_text(
                     f"✅ خرید موفقیت‌آمیز بود!\n\n"
