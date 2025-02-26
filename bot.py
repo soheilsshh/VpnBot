@@ -152,7 +152,7 @@ class VPNBot:
                 'back_to_main': self.back_to_main,
                 'charge_wallet': self.handle_wallet_charge,
                 'service_info': self.show_service_info,
-                'extend_service_' : self.handle_purchase_confirmation,
+                'extend_service' : self.handle_purchase_confirmation,
                 'admin_sales_report': self.show_sales_report,
                 'admin_users': self.manage_users,
                 'admin_discount_codes': self.manage_discount_codes,
@@ -189,7 +189,7 @@ class VPNBot:
                 return
 
             if query.data.startswith('confirm_purchase_'):
-                await self.handle_purchase_confirmation(update, context) #TODO: write this function
+                await self.handle_purchase_confirmation(update, context)
                 return
 
             if query.data.startswith('charge_') and query.data != 'charge_wallet':####
@@ -278,7 +278,7 @@ class VPNBot:
 
             keyboard = [
                 [InlineKeyboardButton("💰 شارژ کیف پول", callback_data='charge_wallet')],
-                [InlineKeyboardButton("🔄 تمدید سرویس", callback_data=f'extend_service_{service[1]}')],
+                [InlineKeyboardButton("🔄 تمدید سرویس", callback_data=f'extend_service}')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')]
             ]
             
@@ -345,10 +345,9 @@ class VPNBot:
         """Handle purchase confirmation"""
         try:
             query = update.callback_query
-            service_id = int(query.data.split('_')[2])
 
             user = self.db.get_user(update.effective_user.id)
-            service = self.db.get_service(service_id)
+            service = self.db.get_user_active_services(user.id)
 
             if not service:
                 await query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
