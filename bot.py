@@ -957,10 +957,11 @@ class VPNBot:
         """Save the updated service name"""
 
         if update.effective_user.id != ADMIN_ID:
+            print("im here")
             return
         
         new_name = update.message.text.strip()
-        print(new_name)
+
         if not new_name:
             await update.message.reply_text("❌ نام سرویس نمی‌تواند خالی باشد.")
             return
