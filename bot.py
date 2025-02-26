@@ -718,6 +718,7 @@ class VPNBot:
         context.user_data['admin_state'] = 'waiting_broadcast_message'
 
     async def handle_broadcast_message(self, update: Update, context: CallbackContext):
+        #TODO: handle broadcast message
         """Handle broadcast message text"""
         if update.effective_user.id != ADMIN_ID:
             return
@@ -762,6 +763,7 @@ class VPNBot:
         if update.effective_user.id != ADMIN_ID:
             return
             
+        #TODO handle each key sepratedly
         keyboard = [
             [InlineKeyboardButton("➕ افزودن سرویس", callback_data='add_service')],
             [InlineKeyboardButton("📝 ویرایش سرویس‌ها", callback_data='edit_services')],
@@ -777,6 +779,7 @@ class VPNBot:
         )
 
     async def add_service(self, update: Update, context: CallbackContext):
+        #TODO
         """Start adding new service"""
         if update.effective_user.id != ADMIN_ID:
             return
@@ -947,7 +950,7 @@ class VPNBot:
             
         keyboard = [
             [InlineKeyboardButton("➕ کد تخفیف جدید", callback_data='add_discount')],
-            [InlineKeyboardButton("📋 لیست کدهای تخفیف", callback_data='list_discounts')],
+            [InlineKeyboardButton("📋 لیست کدهای تخفیف", callback_data='list_discounts')], #TODO: create this call_back
             [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
         ]
         
@@ -978,6 +981,7 @@ class VPNBot:
     
     
     async def add_discount_code(self, update: Update, context: CallbackContext):
+        #TODO: handle add discount % and static $
         """Start adding new discount code"""
         if update.effective_user.id != ADMIN_ID:
             return
