@@ -151,6 +151,8 @@ class Database:
         try:
             user = session.query(User).filter_by(telegram_id=telegram_id).first()
             if user:
+                print(user.wallet_balance)
+                print(amount)
                 user.wallet_balance += amount
                 session.commit()
         except Exception as e:
