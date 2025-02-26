@@ -347,7 +347,8 @@ class VPNBot:
             query = update.callback_query
 
             user = self.db.get_user(update.effective_user.id)
-            service = self.db.get_user_active_services(user.id)
+            active_service = self.db.get_user_active_services(user.id)
+            service = self.db.get_service(active_service.service_id)
 
             if not service:
                 await query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
