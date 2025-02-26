@@ -151,7 +151,22 @@ class VPNBot:
                 'admin_panel': self.show_admin_panel,
                 'back_to_main': self.back_to_main,
                 'charge_wallet': self.handle_wallet_charge,
-                'service_info': self.show_service_info
+                'service_info': self.show_service_info,
+                'extend_service' : self.handle_purchase_confirmation,
+                'admin_sales_report': self.show_sales_report,
+                'admin_users': self.manage_users,
+                'admin_discount_codes': self.manage_discount_codes,
+                'admin_broadcast': self.broadcast_message,
+                'admin_services': self.manage_services,
+                'detailed_report': self.detailed_report,
+                'report_daily': self.show_report,
+                'report_weekly': self.show_report,
+                'report_monthly': self.show_report,
+                'report_custom': self.show_report,
+                'search_user': self.search_user, 
+                'active_users': self.show_active_users,
+                'add_discount': self.add_discount_code,
+                'list_discount_codes': self.list_discount_codes
             }
 
             handler = handlers.get(query.data)
@@ -249,7 +264,7 @@ class VPNBot:
 
             keyboard = [
                 [InlineKeyboardButton("💰 شارژ کیف پول", callback_data='charge_wallet')],
-                [InlineKeyboardButton("🔄 تمدید سرویس", callback_data='extend_service')], #TODO write this function
+                [InlineKeyboardButton("🔄 تمدید سرویس", callback_data='extend_service')], 
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')]
             ]
             
@@ -311,7 +326,55 @@ class VPNBot:
             await update.callback_query.edit_message_text(
                 "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
             )
+    async def handle_purchase_confirmation(self, update: Update, context: CallbackContext):
+        """Handle purchase confirmation"""
+        try:
+            query = update.callback_query
+            service_id = int(query.data.split('_')[2])
 
+            user = self.db.get_user(update.effective_user.id)
+            service = self.db.get_service(service_id)
+
+            if not service:
+                await query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
+                return
+
+            # Create user in Marzban
+            result = await self.create_marzban_user(user.username, {
+                'duration': service.duration,
+                'data_limit': service.data_limit,
+                'inbound_id': service.inbound_id
+            })
+
+            if result['success']:
+                # Deduct the price from user's wallet balance
+                self.db.update_user_balance(user.id, -service.price)
+
+                # Log the transaction
+                self.db.create_transaction(
+                    user_id=user.id,
+                    amount=service.price,
+                    type_='purchase',
+                    status='completed'
+                )
+
+                await query.edit_message_text(
+                    f"✅ خرید موفقیت‌آمیز بود!\n\n"
+                    f"نام سرویس: {service.name}\n"
+                    f"مدت: {service.duration} روز\n"
+                    f"حجم: {service.data_limit} GB\n"
+                    f"💰 مبلغ: {service.price:,} تومان"
+                )
+            else:
+                await query.edit_message_text("❌ خطا در ایجاد حساب کاربری در پنل Marzban.")
+
+        except ValueError:
+            logger.error("Invalid service ID.")
+            await query.edit_message_text("❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید.")
+        except Exception as e:
+            logger.error(f"Error in handle_purchase_confirmation: {e}")
+            await query.edit_message_text("❌ خطا در تایید خرید. لطفاً با پشتیبانی تماس بگیرید.")        
+    
     async def handle_wallet_charge(self, update: Update, context: CallbackContext):
         """Handle wallet charge request"""
         try:
@@ -324,7 +387,7 @@ class VPNBot:
                 keyboard.append([
                     InlineKeyboardButton(
                         f"💰 {amount:,} تومان",
-                        callback_data=f'charge_{amount}'
+                        callback_data=f'charge_{amount}'   
                     )
                 ])
             
@@ -397,8 +460,8 @@ class VPNBot:
             
             # Get user and update balance
             #TODO: handle charge balance user
-            user = self.db.get_user(update.effective_user.id)
-            self.db.update_user_balance(user.id, amount)
+            #user = self.db.get_user(update.effective_user.id)
+            self.db.update_user_balance(update.effective_user.id, amount)
             
             await query.edit_message_text(
                 "✅ پرداخت شما با موفقیت انجام شد و کیف پول شما شارژ شد.",
@@ -519,12 +582,41 @@ class VPNBot:
             keyboard = [
                 [InlineKeyboardButton("🔍 جستجوی کاربر", callback_data='search_user')],
                 [InlineKeyboardButton("📊 کاربران فعال", callback_data='active_users')],
-                [InlineKeyboardButton("⛔️ کاربران مسدود", callback_data='blocked_users')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')]
             ]
             
             reply_markup = InlineKeyboardMarkup(keyboard)
             await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+            
+    async def search_user(self, update: Update, context: CallbackContext):
+        """Search for a user by username or telegram ID"""
+        await update.callback_query.edit_message_text(
+            "لطفاً نام کاربری یا شناسه تلگرام کاربر را وارد کنید:"
+        )
+        context.user_data['admin_state'] = 'waiting_for_user_search'
+    
+    async def show_active_users(self, update: Update, context: CallbackContext):
+        """Show active users"""
+        with Session(self.db.engine) as session:
+            active_users = session.query(User).join(UserService).filter(
+                UserService.is_active == True
+            ).distinct().all()
+
+            if not active_users:
+                await update.callback_query.edit_message_text("❌ هیچ کاربر فعالی یافت نشد.")
+                return
+
+            text = "📋 کاربران فعال:\n"
+            for user in active_users:
+                text += f"👤 {user.username} - ID: {user.telegram_id}\n"
+            
+            keyboard = [
+                [InlineKeyboardButton("🔙 بازگشت به مدیریت کاربران", callback_data='admin_users')]
+             ]
+        
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.callback_query.edit_message_text(text)
 
     async def broadcast_message(self, update: Update, context: CallbackContext):
         """Send broadcast message to users"""
@@ -755,6 +847,26 @@ class VPNBot:
             reply_markup=reply_markup
         )
 
+    async def list_discount_codes(self, update: Update, context: CallbackContext):
+        """Show list of discount codes"""
+        if update.effective_user.id != ADMIN_ID:
+            return
+
+        with Session(self.db.engine) as session:
+            discount_codes = session.query(DiscountCode).all()
+            
+            if not discount_codes:
+                await update.callback_query.edit_message_text("❌ هیچ کد تخفیفی یافت نشد.")
+                return
+            
+            text = "📋 لیست کدهای تخفیف:\n"
+            for code in discount_codes:
+                status = "✅ فعال" if code.is_active else "❌ غیرفعال"
+                text += f"💳 کد: {code.code} - نوع: {code.type} - مقدار: {code.amount} - وضعیت: {status}\n"
+
+            await update.callback_query.edit_message_text(text)
+    
+    
     async def add_discount_code(self, update: Update, context: CallbackContext):
         """Start adding new discount code"""
         if update.effective_user.id != ADMIN_ID:
@@ -1369,7 +1481,7 @@ class VPNBot:
                 logger.error(f"Error sending backup file: {e}")
                 await query.edit_message_text("❌ خطا در ارسال فایل پشتیبان")
 
-    def handle_message(self, update: Update, context: CallbackContext):
+    async def handle_message(self, update: Update, context: CallbackContext):
         """Handle text messages"""
         user_id = update.effective_user.id
         message = update.message.text
@@ -1385,7 +1497,7 @@ class VPNBot:
                     self.handle_service_input(update, context)
                     return
                 elif admin_state.startswith('adding_discount_'):
-                    self.handle_discount_input(update, context)
+                    await self.handle_discount_input(update, context)
                     return
         
         # Default response
