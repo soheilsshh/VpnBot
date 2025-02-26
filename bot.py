@@ -999,10 +999,6 @@ class VPNBot:
             ]])
         )
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackContext
-from sqlalchemy.orm import Session
-
 async def handle_discount_input(self, update: Update, context: CallbackContext):
     """Handle discount code creation input"""
     if update.effective_user.id != ADMIN_ID:
@@ -1023,89 +1019,62 @@ async def handle_discount_input(self, update: Update, context: CallbackContext):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-async def handle_discount_type_selection(self, update: Update, context: CallbackContext):
-    """Handle selection of discount type"""
-    query = update.callback_query
-    await query.answer()
+    elif state == 'adding_discount_amount':
+        user_input = update.message.text.strip()
+        new_discount = context.user_data.get('new_discount', {})
 
-    new_discount = context.user_data.get('new_discount', {})
-    if not new_discount:
-        await query.message.reply_text("خطایی رخ داده است، لطفا دوباره امتحان کنید.")
-        return
+        if 'type' not in new_discount:
+            await update.message.reply_text("خطا: نوع تخفیف مشخص نیست. لطفاً دوباره تلاش کنید.")
+            return
 
-    # Store selected type
-    if query.data == 'discount_type_percent':
-        new_discount['type'] = 'percent'
-    elif query.data == 'discount_type_fixed':
-        new_discount['type'] = 'fixed'
-    else:
-        await query.message.reply_text("نوع تخفیف نامعتبر است.")
-        return
+        try:
+            if new_discount['type'] == 'percent':
+                if not user_input.endswith('%'):
+                    await update.message.reply_text("لطفا مقدار تخفیف درصدی را با علامت % وارد کنید.")
+                    return
+                amount = float(user_input[:-1])  # Remove '%' and convert
+                if not (0 <= amount <= 100):
+                    await update.message.reply_text("لطفا یک مقدار درصدی بین 0 تا 100 وارد کنید.")
+                    return
 
-    context.user_data['new_discount'] = new_discount
-    context.user_data['admin_state'] = 'adding_discount_amount'
+            elif new_discount['type'] == 'fixed':
+                if any(c in user_input for c in '%$٪'):
+                    await update.message.reply_text("لطفا مقدار تخفیف ثابت را بدون علامت وارد کنید.")
+                    return
+                amount = float(user_input)
+                if amount <= 0:
+                    await update.message.reply_text("لطفا یک مقدار مثبت وارد کنید.")
+                    return
 
-    await query.message.reply_text("حالا مقدار تخفیف را وارد کنید:")
+            # Save to database
+            try:
+                with Session(self.db.engine) as session:
+                    discount = DiscountCode(
+                        code=new_discount['code'],
+                        type=new_discount['type'],
+                        amount=amount,
+                        is_active=True
+                    )
+                    session.add(discount)
+                    session.commit()
 
-async def handle_discount_amount(self, update: Update, context: CallbackContext):
-    """Handle discount amount input and save to DB"""
-    state = context.user_data.get('admin_state', '')
-    if state != 'adding_discount_amount':
-        return
+                amount_text = f"{amount}%" if new_discount['type'] == 'percent' else f"{amount:,} تومان"
+                await update.message.reply_text(
+                    f"✅ کد تخفیف با موفقیت اضافه شد:\n\n"
+                    f"کد: {new_discount['code']}\n"
+                    f"نوع: {'درصدی' if new_discount['type'] == 'percent' else 'مبلغ ثابت'}\n"
+                    f"مقدار: {amount_text}"
+                )
 
-    user_input = update.message.text.strip()
-    new_discount = context.user_data.get('new_discount', {})
+                # Clear stored state
+                context.user_data.pop('admin_state', None)
+                context.user_data.pop('new_discount', None)
 
-    if not new_discount or 'type' not in new_discount:
-        await update.message.reply_text("خطایی رخ داده است. لطفا از اول شروع کنید.")
-        context.user_data.pop('admin_state', None)
-        context.user_data.pop('new_discount', None)
-        return
+            except SQLAlchemyError as e:
+                await update.message.reply_text("❌ خطا در ذخیره‌سازی کد تخفیف. لطفا دوباره تلاش کنید.")
 
-    try:
-        if new_discount['type'] == 'percent':
-            if not user_input.endswith('%'):
-                await update.message.reply_text("لطفا مقدار تخفیف درصدی را با علامت % وارد کنید.")
-                return
-            amount = float(user_input[:-1])  # Remove '%' and convert to float
-            if amount < 0 or amount > 100:
-                await update.message.reply_text("لطفا یک مقدار درصدی بین 0 تا 100 وارد کنید.")
-                return
-
-        elif new_discount['type'] == 'fixed':
-            if any(c in user_input for c in '%$٪'):
-                await update.message.reply_text("لطفا مقدار تخفیف ثابت را بدون علامت وارد کنید.")
-                return
-            amount = float(user_input)
-            if amount < 0:
-                await update.message.reply_text("لطفا یک مقدار مثبت وارد کنید.")
-                return
-
-        # Save to DB
-        with Session(self.db.engine) as session:
-            discount = DiscountCode(
-                code=new_discount['code'],
-                type=new_discount['type'],
-                amount=amount,
-                is_active=True
-            )
-            session.add(discount)
-            session.commit()
-
-        amount_text = f"{amount}%" if new_discount['type'] == 'percent' else f"{amount:,} تومان"
-        await update.message.reply_text(
-            f"✅ کد تخفیف با موفقیت اضافه شد:\n\n"
-            f"کد: {new_discount['code']}\n"
-            f"نوع: {new_discount['type']}\n"
-            f"مقدار: {amount_text}"
-        )
-
-        # Clear state
-        context.user_data.pop('admin_state', None)
-        context.user_data.pop('new_discount', None)
-
-    except ValueError:
-        await update.message.reply_text("لطفا یک عدد معتبر وارد کنید.")
+        except ValueError:
+            await update.message.reply_text("❌ لطفا یک عدد معتبر وارد کنید.")
 
     async def handle_discount_type(self, update: Update, context: CallbackContext):
         query = update.callback_query
