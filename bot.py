@@ -999,78 +999,105 @@ class VPNBot:
             ]])
         )
 
-    async def handle_discount_input(self, update: Update, context: CallbackContext):
-        """Handle discount code creation input"""
-        if update.effective_user.id != ADMIN_ID:
+async def handle_discount_input(self, update: Update, context: CallbackContext):
+    """Handle discount code creation input"""
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    state = context.user_data.get('admin_state', '')
+
+    if state == 'adding_discount_code':
+        context.user_data['new_discount'] = {'code': update.message.text.upper()}
+        context.user_data['admin_state'] = 'adding_discount_type'
+
+        keyboard = [
+            [InlineKeyboardButton("درصدی", callback_data='discount_type_percent')],
+            [InlineKeyboardButton("مبلغ ثابت", callback_data='discount_type_fixed')]
+        ]
+        await update.message.reply_text(
+            "نوع تخفیف را انتخاب کنید:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    elif state == 'adding_discount_amount':
+        user_input = update.message.text.strip()
+        new_discount = context.user_data.get('new_discount')
+
+        if not new_discount or 'type' not in new_discount:
+            await update.message.reply_text("خطایی رخ داده است. لطفا از اول شروع کنید.")
+            context.user_data.pop('admin_state', None)
+            context.user_data.pop('new_discount', None)
             return
 
-        state = context.user_data.get('admin_state', '')
+        print(f"Debugging: new_discount = {new_discount}")  # Debugging step
 
-        if state == 'adding_discount_code':
-            context.user_data['new_discount'] = {'code': update.message.text.upper()}
-            context.user_data['admin_state'] = 'adding_discount_type'
+        try:
+            if new_discount['type'] == 'percent':
+                if not user_input.endswith('%'):
+                    await update.message.reply_text("لطفا مقدار تخفیف درصدی را با علامت % وارد کنید.")
+                    return
+                amount = float(user_input[:-1])
+                if amount < 0 or amount > 100:
+                    await update.message.reply_text("لطفا یک مقدار درصدی بین 0 تا 100 وارد کنید.")
+                    return
 
-            keyboard = [
-                [InlineKeyboardButton("درصدی", callback_data='discount_type_percent')],
-                [InlineKeyboardButton("مبلغ ثابت", callback_data='discount_type_fixed')]
-            ]
+            elif new_discount['type'] == 'fixed':
+                if any(c in user_input for c in '%$٪'):
+                    await update.message.reply_text("لطفا مقدار تخفیف ثابت را بدون علامت وارد کنید.")
+                    return
+                amount = float(user_input)
+                if amount < 0:
+                    await update.message.reply_text("لطفا یک مقدار مثبت وارد کنید.")
+                    return
+
+            # Save to DB
+            with Session(self.db.engine) as session:
+                discount = DiscountCode(
+                    code=new_discount['code'],
+                    type=new_discount['type'],
+                    amount=amount,
+                    is_active=True
+                )
+                session.add(discount)
+                session.commit()
+
+            amount_text = f"{amount}%" if new_discount['type'] == 'percent' else f"{amount:,} تومان"
             await update.message.reply_text(
-                "نوع تخفیف را انتخاب کنید:",
-                reply_markup=InlineKeyboardMarkup(keyboard)
+                f"✅ کد تخفیف با موفقیت اضافه شد:\n\n"
+                f"کد: {new_discount['code']}\n"
+                f"نوع: {new_discount['type']}\n"
+                f"مقدار: {amount_text}"
             )
 
+            # Clear state
+            context.user_data.pop('admin_state', None)
+            context.user_data.pop('new_discount', None)
 
-        elif state == 'adding_discount_amount':
-            user_input = update.message.text.strip()
-            new_discount = context.user_data['new_discount']
+        except ValueError:
+            await update.message.reply_text("لطفا یک عدد معتبر وارد کنید.")
 
-            try:
-                if new_discount['type'] == 'percent':
-                    # For percentage, the input must end with '%'
-                    if not user_input.endswith('%'):
-                        await update.message.reply_text("لطفا مقدار تخفیف درصدی را با علامت % وارد کنید.")
-                        return
-                    amount = float(user_input[:-1])  # Remove the '%' and convert to float
-                    if amount < 0 or amount > 100:
-                        await update.message.reply_text("لطفا یک مقدار درصدی بین 0 تا 100 وارد کنید.")
-                        return
+async def handle_discount_type_selection(self, update: Update, context: CallbackContext):
+    """Handle selection of discount type"""
+    query = update.callback_query
+    await query.answer()
 
-                elif new_discount['type'] == 'fixed':
-                    # For fixed amount, the input must be a plain number
-                    if any(c in user_input for c in '%$٪'):
-                        await update.message.reply_text("لطفا مقدار تخفیف ثابت را بدون علامت وارد کنید.")
-                        return
-                    amount = float(user_input)
-                    if amount < 0:
-                        await update.message.reply_text("لطفا یک مقدار مثبت وارد کنید.")
-                        return
+    # Retrieve the discount data
+    new_discount = context.user_data.get('new_discount', {})
+    if not new_discount:
+        await query.message.reply_text("خطایی رخ داده است، لطفا دوباره امتحان کنید.")
+        return
 
-                # Save the discount to the database
-                with Session(self.db.engine) as session:
-                    discount = DiscountCode(
-                        code=new_discount['code'],
-                        type=new_discount['type'],
-                        amount=amount,
-                        is_active=True
-                    )
-                    session.add(discount)
-                    session.commit()
+    # Set the discount type based on user selection
+    if query.data == 'discount_type_percent':
+        new_discount['type'] = 'percent'
+    elif query.data == 'discount_type_fixed':
+        new_discount['type'] = 'fixed'
 
-                # Prepare the response message
-                amount_text = f"{amount}%" if new_discount['type'] == 'percent' else f"{amount:,} تومان"
-                await update.message.reply_text(
-                    f"✅ کد تخفیف با موفقیت اضافه شد:\n\n"
-                    f"کد: {new_discount['code']}\n"
-                    f"نوع: {new_discount['type']}\n"
-                    f"مقدار: {amount_text}"
-                )
+    context.user_data['new_discount'] = new_discount
+    context.user_data['admin_state'] = 'adding_discount_amount'
 
-                # Clear the state and data
-                context.user_data.pop('admin_state', None)
-                context.user_data.pop('new_discount', None)
+    await query.message.reply_text("حالا مقدار تخفیف را وارد کنید:")
 
-            except ValueError:
-                await update.message.reply_text("لطفا یک عدد معتبر وارد کنید.")
 
 
     async def handle_discount_type(self, update: Update, context: CallbackContext):
