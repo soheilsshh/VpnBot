@@ -684,6 +684,7 @@ class VPNBot:
                 [InlineKeyboardButton("🔙 بازگشت به مدیریت کاربران", callback_data='admin_users')]
              ]
         
+<<<<<<< HEAD
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             await update.callback_query.edit_message_text(text)
@@ -708,6 +709,8 @@ class VPNBot:
                 [InlineKeyboardButton("🔙 بازگشت به منو مدیریت", callback_data='admin_users')]
              ]
 
+=======
+>>>>>>> 55550f61e66dd5478c271f68f28f3019fd32f9d0
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             await update.callback_query.edit_message_text(text)
