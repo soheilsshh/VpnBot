@@ -175,7 +175,7 @@ class VPNBot:
                 'add_service' : self.add_service,
                 'edit_services' : self.edit_services,
                 'inbound_settings' : self.manage_inbounds,
-                
+                'renewal_settings' : self.renewal_settings
             }
 
             handler = handlers.get(query.data)
@@ -849,6 +849,35 @@ class VPNBot:
             
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text, reply_markup=reply_markup)
+    async def renewal_settings(self, update: Update, context: CallbackContext):
+        """Manage renewal settings for a service"""
+        if update.effective_user.id != ADMIN_ID:
+            return
+
+        try:
+            # Retrieve active services from the database
+            services = self.db.get_active_services()
+            if not services:
+                await update.callback_query.edit_message_text("❌ هیچ سرویسی برای تمدید یافت نشد.")
+                return
+            
+            # Create a keyboard to list services
+            keyboard = [
+                [InlineKeyboardButton(f"{service.name} - {service.price:,} تومان", callback_data=f'renew_{service.id}')]
+                for service in services
+            ]
+            keyboard.append([InlineKeyboardButton("🔙 بازگشت", callback_data='admin_panel')])
+            
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.callback_query.edit_message_text(
+                "⚙️ لطفا سرویس مورد نظر برای تمدید را انتخاب کنید:",
+                reply_markup=reply_markup
+            )
+            
+        except Exception as e:
+            logger.error(f"Error in renewal settings: {e}")
+            await update.callback_query.edit_message_text("❌ خطا در دریافت اطلاعات سرویس‌ها.")
 
     async def manage_discount_codes(self, update: Update, context: CallbackContext):
         """Manage discount codes"""
