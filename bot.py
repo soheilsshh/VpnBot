@@ -722,14 +722,12 @@ class VPNBot:
             await update.message.reply_text("خطا در پردازش درخواست. لطفا دوباره امتحان کنید.")
 
     async def handle_broadcast_message(self, update: Update, context: CallbackContext):
-        #TODO: handle broadcast message
-        """Handle broadcast message text"""
+        """Handle broadcast message text and send to the selected group"""
         if update.effective_user.id != ADMIN_ID:
             return
 
         message = update.message.text
         target = context.user_data.get('broadcast_target', 'all')
-        print(target)
 
         with Session(self.db.engine) as session:
             if target == 'all':
@@ -738,30 +736,31 @@ class VPNBot:
                 users = session.query(User).join(UserService).filter(
                     UserService.is_active == True
                 ).distinct().all()
-            else:
+            else:  # 'inactive'
                 users = session.query(User).outerjoin(UserService).filter(
                     UserService.id == None
                 ).all()
 
-            success = 0
-            failed = 0
+            success, failed = 0, 0
 
             for user in users:
                 try:
                     await context.bot.send_message(user.telegram_id, message)
                     success += 1
                 except Exception as e:
-                    logger.error(f"Failed to send broadcast to user {user.telegram_id}: {e}")
+                    logger.error(f"Failed to send broadcast to {user.telegram_id}: {e}")
                     failed += 1
 
             await update.message.reply_text(
-                f"📨 نتیجه ارسال پیام همگانی:\n"
+                f"📨 پیام همگانی ارسال شد:\n"
                 f"✅ موفق: {success}\n"
                 f"❌ ناموفق: {failed}"
             )
 
+        # Clear the state after sending
         context.user_data.pop('admin_state', None)
         context.user_data.pop('broadcast_target', None)
+
 
     async def manage_services(self, update: Update, context: CallbackContext):
         """Manage services settings"""
