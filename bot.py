@@ -362,8 +362,6 @@ class VPNBot:
 
             if result['success']:
                 # Deduct the price from user's wallet balance
-                print(user.id)
-                print(-service.price)
                 self.db.update_user_balance(user.id, -service.price)
 
                 # Log the transaction

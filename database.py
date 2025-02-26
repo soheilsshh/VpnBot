@@ -146,18 +146,34 @@ class Database:
         finally:
             session.close()
 
-    def update_user_balance(self, telegram_id, amount):
-        session = self.Session()
-        try:
-            user = session.query(User).filter_by(telegram_id=telegram_id).first()
-            if user:
-                user.wallet_balance += amount
-                session.commit()
-        except Exception as e:
-            session.rollback()
-            print(f"Error updating user balance: {e}")
-        finally:
-            session.close()
+def update_user_balance(self, telegram_id, amount):
+    session = self.Session()
+    try:
+        user = session.query(User).filter_by(telegram_id=telegram_id).first()
+        if user:
+            new_balance = user.wallet_balance + amount
+
+            # Debugging
+            print(f"Current Balance: {user.wallet_balance}, Amount: {amount}, New Balance: {new_balance}")
+
+            # Optional: Prevent negative balances if necessary
+            if new_balance < 0:
+                print("Insufficient balance!")
+                return False
+
+            user.wallet_balance = new_balance
+            session.commit()
+            return True
+        else:
+            print("User not found.")
+            return False
+    except Exception as e:
+        session.rollback()
+        print(f"Error updating user balance: {e}")
+        return False
+    finally:
+        session.close()
+
 
     # Service methods
     def create_service(self, name, price, duration, data_limit, inbound_id=1):
