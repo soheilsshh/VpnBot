@@ -726,8 +726,14 @@ class VPNBot:
         if update.effective_user.id != ADMIN_ID:
             return
 
+        # Check if the message exists and has text
+        if not update.message or not update.message.text:
+            logger.error("No text found in the message.")
+            return
+
         message = update.message.text
         target = context.user_data.get('broadcast_target', 'all')
+
 
         with Session(self.db.engine) as session:
             if target == 'all':
