@@ -171,7 +171,8 @@ class VPNBot:
                 'discount_type_fixed' : self.handle_discount_type,
                 'broadcast_inactive' : self.handle_broadcast_message,
                 'broadcast_active':self.handle_broadcast_message,
-                'broadcast_all' : self.handle_broadcast_message
+                'broadcast_all' : self.handle_broadcast_message,
+                'inbound_settings' : self.manage_inbound_settings,
             }
 
             handler = handlers.get(query.data)
@@ -637,14 +638,16 @@ class VPNBot:
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        if update.callback_query.message and update.callback_query.message.text != "📨 ارسال پیام همگانی\n\nلطفا گروه هدف را انتخاب کنید:":
+        message_text = "📨 ارسال پیام همگانی\n\nلطفا گروه هدف را انتخاب کنید:"
+        
+        if update.callback_query and update.callback_query.message and update.callback_query.message.text != message_text:
             await update.callback_query.edit_message_text(
-                "📨 ارسال پیام همگانی\n\nلطفا گروه هدف را انتخاب کنید:",
+                message_text,
                 reply_markup=reply_markup
             )
-        elif update.callback_query.message is None:
+        elif update.callback_query and update.callback_query.message is None:
             await update.effective_message.reply_text(
-                "📨 ارسال پیام همگانی\n\nلطفا گروه هدف را انتخاب کنید:",
+                message_text,
                 reply_markup=reply_markup
             )
         
@@ -721,6 +724,13 @@ class VPNBot:
                 InlineKeyboardButton("🔙 انصراف", callback_data='manage_services')
             ]])
         )
+    async def manage_inbound_settings(self, update: Update, context: CallbackContext):
+        """Manage inbound settings"""
+        try:
+            
+            await update.callback_query.edit_message_text("Manage inbound settings")
+        except Exception as e:
+            logger.error(f"Error in managing inbound settings: {e}")
 
     async def handle_service_input(self, update: Update, context: CallbackContext):
         """Handle service creation input"""
