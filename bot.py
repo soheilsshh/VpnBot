@@ -340,10 +340,13 @@ class VPNBot:
             await update.callback_query.edit_message_text(
                 "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
             )
+
     async def handle_purchase_confirmation(self, update: Update, context: CallbackContext):
         """Handle purchase confirmation"""
         try:
             query = update.callback_query
+            print(query.data.split('_'))
+            print(query.data.split('_')[2])
             service_id = int(query.data.split('_')[2])
 
             user = self.db.get_user(update.effective_user.id)

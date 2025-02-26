@@ -153,23 +153,17 @@ class Database:
             if user:
                 new_balance = user.wallet_balance + amount
 
-                # Debugging
-                print(f"Current Balance: {user.wallet_balance}, Amount: {amount}, New Balance: {new_balance}")
-
                 # Optional: Prevent negative balances if necessary
                 if new_balance < 0:
-                    print("Insufficient balance!")
                     return False
 
                 user.wallet_balance = new_balance
                 session.commit()
                 return True
             else:
-                print("User not found.")
                 return False
         except Exception as e:
             session.rollback()
-            print(f"Error updating user balance: {e}")
             return False
         finally:
             session.close()
