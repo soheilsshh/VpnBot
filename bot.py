@@ -153,6 +153,7 @@ class VPNBot:
                 'charge_wallet': self.handle_wallet_charge,
                 'service_info': self.show_service_info,
                 'extend_service' : self.handle_purchase_confirmation,
+                'extend_service' : self.handle_extend_service,
                 'admin_sales_report': self.show_sales_report,
                 'admin_users': self.manage_users,
                 'admin_discount_codes': self.manage_discount_codes,
@@ -341,14 +342,62 @@ class VPNBot:
                 "❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید."
             )
 
-    async def handle_purchase_confirmation(self, update: Update, context: CallbackContext):
-        """Handle purchase confirmation"""
+    async def handle_extend_service(self, update: Update, context: CallbackContext):
+        """Handle extend service"""
         try:
             query = update.callback_query
 
             user = self.db.get_user(update.effective_user.id)
             active_service = self.db.get_user_active_services(user.id)
             service = self.db.get_service(active_service[0][2])
+
+            if not service:
+                await query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
+                return
+
+            # Create user in Marzban
+            result = await self.create_marzban_user(user.username, {
+                'duration': service.duration,
+                'data_limit': service.data_limit,
+                'inbound_id': service.inbound_id
+            })
+
+            if result['success']:
+                # Deduct the price from user's wallet balance)
+                self.db.update_user_balance(update.effective_user.id, -service.price)
+
+                # Log the transaction
+                self.db.create_transaction(
+                    user_id=user.id,
+                    amount=service.price,
+                    type_='purchase',
+                    status='completed'
+                )
+
+                await query.edit_message_text(
+                    f"✅ خرید موفقیت‌آمیز بود!\n\n"
+                    f"نام سرویس: {service.name}\n"
+                    f"مدت: {service.duration} روز\n"
+                    f"حجم: {service.data_limit} GB\n"
+                    f"💰 مبلغ: {service.price:,} تومان"
+                )
+            else:
+                await query.edit_message_text("❌ خطا در ایجاد حساب کاربری در پنل Marzban.")
+
+        except ValueError:
+            logger.error("Invalid service ID.")
+            await query.edit_message_text("❌ خطا در پردازش درخواست. لطفاً مجدداً تلاش کنید.")
+        except Exception as e:
+            logger.error(f"Error in handle_purchase_confirmation: {e}")
+            await query.edit_message_text("❌ خطا در تایید خرید. لطفاً با پشتیبانی تماس بگیرید.")
+
+    async def handle_purchase_confirmation(self, update: Update, context: CallbackContext):
+        """Handle purchase confirmation"""
+        try:
+            query = update.callback_query
+
+            user = self.db.get_user(update.effective_user.id)
+            service = self.db.get_service(query.data.split('_')[2])
 
             if not service:
                 await query.edit_message_text("❌ سرویس مورد نظر یافت نشد.")
@@ -474,8 +523,6 @@ class VPNBot:
             self.db.update_transaction_status(transaction_id, 'completed')
             
             # Get user and update balance
-            #TODO: handle charge balance user
-            #user = self.db.get_user(update.effective_user.id)
             self.db.update_user_balance(update.effective_user.id, amount)
             
             await query.edit_message_text(
