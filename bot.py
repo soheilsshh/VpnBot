@@ -152,7 +152,7 @@ class VPNBot:
                 'back_to_main': self.back_to_main,
                 'charge_wallet': self.handle_wallet_charge,
                 'service_info': self.show_service_info,
-                'extend_service' : self.handle_purchase_confirmation,
+                'confirm_purchase' : self.handle_purchase_confirmation,
                 'extend_service' : self.handle_extend_service,
                 'admin_sales_report': self.show_sales_report,
                 'admin_users': self.manage_users,
