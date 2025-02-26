@@ -275,10 +275,10 @@ class VPNBot:
 📅 {remaining_days} روز مانده
 📊 {remaining_gb:.1f} GB حجم باقیمانده
 """
-            print(service)
+
             keyboard = [
                 [InlineKeyboardButton("💰 شارژ کیف پول", callback_data='charge_wallet')],
-                [InlineKeyboardButton("🔄 تمدید سرویس", callback_data='extend_service')], 
+                [InlineKeyboardButton("🔄 تمدید سرویس", callback_data=f'extend_service_{service[1]}')],
                 [InlineKeyboardButton("🔙 بازگشت", callback_data='back_to_main')]
             ]
             
